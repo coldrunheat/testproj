@@ -1,0 +1,14 @@
+C:\Users\kmo\source\repos\ERS\ERS\bin\Debug\ERS.exe.config
+C:\Users\kmo\source\repos\ERS\ERS\bin\Debug\ERS.exe
+C:\Users\kmo\source\repos\ERS\ERS\bin\Debug\ERS.pdb
+C:\Users\kmo\source\repos\ERS\ERS\obj\Debug\ERS.csproj.AssemblyReference.cache
+C:\Users\kmo\source\repos\ERS\ERS\obj\Debug\ERS.Login.resources
+C:\Users\kmo\source\repos\ERS\ERS\obj\Debug\ERS.Properties.Resources.resources
+C:\Users\kmo\source\repos\ERS\ERS\obj\Debug\ERS.csproj.GenerateResource.cache
+C:\Users\kmo\source\repos\ERS\ERS\obj\Debug\ERS.csproj.CoreCompileInputs.cache
+C:\Users\kmo\source\repos\ERS\ERS\obj\Debug\ERS.exe
+C:\Users\kmo\source\repos\ERS\ERS\obj\Debug\ERS.pdb
+C:\Users\kmo\source\repos\ERS\ERS\obj\Debug\ERS.RegForm.resources
+C:\Users\kmo\source\repos\ERS\ERS\obj\Debug\ERS.Dashboard.resources
+C:\Users\kmo\source\repos\ERS\ERS\obj\Debug\ERS.AddRecord.resources
+C:\Users\kmo\source\repos\ERS\ERS\obj\Debug\ERS.GenerateCOEID.resources
