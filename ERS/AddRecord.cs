@@ -24,10 +24,48 @@ namespace ERS
         {
             InitializeComponent();
 
-         
+            string generatedID = GenerateEmployeeID();
+            idtb.Text = generatedID;
+
         }
 
         SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;");
+
+        private string GenerateEmployeeID()
+        {
+            string year = DateTime.Now.Year.ToString();
+            string idNumber = "";
+
+            // Connect to your database and query for the highest ID number for the current year
+            // Assume conn is your SqlConnection object
+            try
+            {
+                connect.Open();
+                string query = $"SELECT MAX(emp_id) FROM empdata WHERE emp_id LIKE '{year}%'";
+                SqlCommand cmd = new SqlCommand(query, connect);
+                object result = cmd.ExecuteScalar();
+
+                if (result != DBNull.Value)
+                {
+                    int maxID = Convert.ToInt32(result.ToString().Substring(4)); // Extract the numeric part
+                    idNumber = $"{year}{(maxID + 1).ToString("0000")}";
+                }
+                else
+                {
+                    idNumber = $"{year}0001"; // If no records exist for the current year
+                }
+            }
+               catch (Exception ex)
+            {
+                MessageBox.Show("Error generating Employee ID: " + ex.Message, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                connect.Close();
+            }
+            return idNumber;
+        }
+
 
 
         private void AddRecord_Load(object sender, EventArgs e)
@@ -152,7 +190,7 @@ namespace ERS
                 string query = "DELETE FROM empdata where emp_id = '" + idtb.Text + "'; ";
                 SqlCommand cmd = new SqlCommand(query, connect);
                 cmd.ExecuteNonQuery();
-                MessageBox.Show("Record Deleted Successfully");
+                MessageBox.Show("Record Deleted Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 connect.Close();
                 populate();
             }
@@ -231,6 +269,60 @@ namespace ERS
             empcontactnum.Text = dataGridView1.SelectedRows[0].Cells[13].Value.ToString();
             empcontactaddress.Text = dataGridView1.SelectedRows[0].Cells[14].Value.ToString();
             
+        }
+
+        private void updaterecordbtn_Click(object sender, EventArgs e)
+        {
+            if (fnametb.Text == "")
+            {
+                MessageBox.Show("Missing Information", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            else
+            {
+                try
+                {
+                    connect.Open();
+
+                    string path = Path.Combine(@"C:\Users\kmo\source\repos\ERS\ERS\Directory\", idtb.Text.Trim() + ".jpg");
+
+                    if (!Directory.Exists(Path.GetDirectoryName(path)))
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(path));
+                    }
+
+                    if (!string.IsNullOrEmpty(profpic.ImageLocation))
+                    {
+                        File.Copy(profpic.ImageLocation, path, true);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Image location is null or empty", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    string bday = bdaydp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                    string startDate = startdatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                    string endDate = enddatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+                    string query = "UPDATE empdate set empfirstname = '" + fnametb.Text.Trim() + "', empmiddlename = ' " + mnametb.Text.Trim() + "', " +
+                        "emplastname = '" + lnametb.Text.Trim() + "', empcnum = '" + cnumtb.Text.Trim() + "', empbirthdate = '" + bday + "', " +
+                        "empaddress = '" + addresstb.Text.Trim() + "', empproject = '" + projcb.SelectedItem.ToString() + "',  " +
+                        "emppostn = '" + emppos.SelectedItem.ToString() + "', empstartdate = '" + startDate + "', empenddate = '" + endDate + "', " +
+                        " image = '" + path + "', contactname = '" + empcontactname.Text.Trim() + "', contactnum = '" + empcontactnum.Text.Trim() + "', " +
+                        " contactaddress = '" + empcontactaddress.Text.Trim() + "' where emp_id = '" + idtb.Text+"' ; ";
+                    
+                    SqlCommand cmd = new SqlCommand(query, connect);
+                    cmd.ExecuteNonQuery();
+                    MessageBox.Show("Record Updated Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    connect.Close();
+                    populate();
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show("Error: " + ex, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                }
         }
     }
 }

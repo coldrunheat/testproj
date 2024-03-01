@@ -171,6 +171,7 @@
             this.updaterecordbtn.TabIndex = 33;
             this.updaterecordbtn.Text = "Update";
             this.updaterecordbtn.UseVisualStyleBackColor = false;
+            this.updaterecordbtn.Click += new System.EventHandler(this.updaterecordbtn_Click);
             // 
             // addrecordbtn
             // 
@@ -276,10 +277,10 @@
             // 
             this.projcb.FormattingEnabled = true;
             this.projcb.Items.AddRange(new object[] {
-            "Sumobot",
-            "Drone",
-            "BuildingAux",
-            "Antenna"});
+            "CBMS",
+            "NICTHS",
+            "FIES",
+            "AgStat"});
             this.projcb.Location = new System.Drawing.Point(397, 27);
             this.projcb.Name = "projcb";
             this.projcb.Size = new System.Drawing.Size(136, 21);
