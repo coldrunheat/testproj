@@ -24,6 +24,8 @@ namespace ERS
         {
             InitializeComponent();
 
+            dataGridView1.CellClick += dataGridView1_CellContentClick_1;
+
             string generatedID = GenerateEmployeeID();
             idtb.Text = generatedID;
 
@@ -203,15 +205,22 @@ namespace ERS
         
         private void populate() 
         {
-            connect.Open();
-            string query = "SELECT * FROM empdata";
-            SqlDataAdapter adapter = new SqlDataAdapter(query, connect);
-            SqlCommandBuilder builder = new SqlCommandBuilder(adapter);
-            var dset = new DataSet();
-            adapter.Fill(dset);
-            dataGridView1.DataSource = dset.Tables[0];
-            connect.Close();
+            try
+            {
 
+                connect.Open();
+                string query = "SELECT * FROM empdata";
+                SqlDataAdapter adapter = new SqlDataAdapter(query, connect);
+                SqlCommandBuilder builder = new SqlCommandBuilder(adapter);
+                var dset = new DataSet();
+                adapter.Fill(dset);
+                dataGridView1.DataSource = dset.Tables[0];
+                connect.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(" Error loading data " + ex.Message, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
 
@@ -248,6 +257,8 @@ namespace ERS
 
         }
 
+        
+
         private void dataGridView1_CellContentClick_1(object sender, DataGridViewCellEventArgs e)
         {
             /*
@@ -256,20 +267,116 @@ namespace ERS
 
             MessageBox.Show($"Clicked on cell in column {columnIndex} and row {rowIndex}");
             */
-            
-            idtb.Text = dataGridView1.SelectedRows[0].Cells[0].Value.ToString();
-            fnametb.Text = dataGridView1.SelectedRows[0].Cells["empfirstname"].Value.ToString();
-            mnametb.Text = dataGridView1.SelectedRows[0].Cells["empmiddlename"].Value.ToString();
-            lnametb.Text = dataGridView1.SelectedRows[0].Cells[3].Value.ToString();
-            cnumtb.Text = dataGridView1.SelectedRows[0].Cells["empcnum"].Value.ToString();
-            addresstb.Text = dataGridView1.SelectedRows[0].Cells[5].Value.ToString();
-            projcb.Text = dataGridView1.SelectedRows[0].Cells[7].Value.ToString();
-            emppos.Text = dataGridView1.SelectedRows[0].Cells["emppstn"].Value.ToString();
-            empcontactname.Text = dataGridView1.SelectedRows[0].Cells[12].Value.ToString();
-            empcontactnum.Text = dataGridView1.SelectedRows[0].Cells[13].Value.ToString();
-            empcontactaddress.Text = dataGridView1.SelectedRows[0].Cells[14].Value.ToString();
-            
+          
+            if (e.RowIndex >= 0)
+            {
+                // Get the DataGridViewRow corresponding to the clicked cell
+                DataGridViewRow selectedRow = dataGridView1.Rows[e.RowIndex];
+
+                // Extract values from the selected row and display them in textboxes
+                fnametb.Text = selectedRow.Cells["empfirstname"].Value.ToString();
+                mnametb.Text = selectedRow.Cells["empmiddlename"].Value.ToString();
+                lnametb.Text = selectedRow.Cells["emplastname"].Value.ToString();
+                cnumtb.Text = selectedRow.Cells["empcnum"].Value.ToString();
+                addresstb.Text = selectedRow.Cells["empaddress"].Value.ToString();
+                projcb.Text = selectedRow.Cells["empproject"].Value.ToString();
+                emppos.Text = selectedRow.Cells["emppostn"].Value.ToString();
+                empcontactname.Text = selectedRow.Cells["contactname"].Value.ToString();
+                empcontactnum.Text = selectedRow.Cells["contactnum"].Value.ToString();
+                empcontactaddress.Text = selectedRow.Cells["contactadd"].Value.ToString();
+
+            }
+
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+            {
+                DataGridViewRow selectedRow = dataGridView1.Rows[e.RowIndex];
+
+                // Retrieve the birthdate value
+                object birthdateObj = selectedRow.Cells["empbirthdate"].Value;
+                if (birthdateObj != null && !string.IsNullOrEmpty(birthdateObj.ToString()))
+                {
+                    DateTime birthdate;
+
+                    if (DateTime.TryParse(birthdateObj.ToString(), out birthdate))
+                    {
+                        // Set the birthdate value to the DateTimePicker
+                        bdaydp.Value = birthdate;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Invalid birthdate format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Birthdate column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
+                object startdateObj = selectedRow.Cells["empstartdate"].Value;
+                if (startdateObj != null && !string.IsNullOrEmpty(startdateObj.ToString()))
+                {
+                    DateTime startdate;
+
+                    if (DateTime.TryParse(startdateObj.ToString(), out startdate))
+                    {
+                    
+                        startdatedp.Value = startdate;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Invalid start date format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Start date column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
+                object enddateObj = selectedRow.Cells["empenddate"].Value;
+                if (enddateObj != null && !string.IsNullOrEmpty(enddateObj.ToString()))
+                {
+                    DateTime enddate;
+
+                    if (DateTime.TryParse(enddateObj.ToString(), out enddate))
+                    {
+
+                        enddatedp.Value = enddate;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Invalid end date format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("End date column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
+
+                // Retrieve the image path value
+                object imagePathObj = selectedRow.Cells["image"].Value;
+                if (imagePathObj != null && !string.IsNullOrEmpty(imagePathObj.ToString()))
+                {
+                    string imagePath = imagePathObj.ToString();
+
+                    // Display the image in the PictureBox
+                    try
+                    {
+                        profpic.ImageLocation = imagePath;
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Error loading image: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Image path column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+
         }
+
 
         private void updaterecordbtn_Click(object sender, EventArgs e)
         {
@@ -304,23 +411,62 @@ namespace ERS
                     string startDate = startdatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                     string endDate = enddatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-                    string query = "UPDATE empdate set empfirstname = '" + fnametb.Text.Trim() + "', empmiddlename = ' " + mnametb.Text.Trim() + "', " +
-                        "emplastname = '" + lnametb.Text.Trim() + "', empcnum = '" + cnumtb.Text.Trim() + "', empbirthdate = '" + bday + "', " +
-                        "empaddress = '" + addresstb.Text.Trim() + "', empproject = '" + projcb.SelectedItem.ToString() + "',  " +
-                        "emppostn = '" + emppos.SelectedItem.ToString() + "', empstartdate = '" + startDate + "', empenddate = '" + endDate + "', " +
-                        " image = '" + path + "', contactname = '" + empcontactname.Text.Trim() + "', contactnum = '" + empcontactnum.Text.Trim() + "', " +
-                        " contactaddress = '" + empcontactaddress.Text.Trim() + "' where emp_id = '" + idtb.Text+"' ; ";
-                    
-                    SqlCommand cmd = new SqlCommand(query, connect);
-                    cmd.ExecuteNonQuery();
-                    MessageBox.Show("Record Updated Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    string project = projcb.SelectedItem != null ? projcb.SelectedItem.ToString() : "";
+                    string position = emppos.SelectedItem != null ? emppos.SelectedItem.ToString() : "";
 
-                    connect.Close();
-                    populate();
+                    string query = "UPDATE empdata " + "SET empfirstname = @FirstName, " +
+                   "empmiddlename = @MiddleName, " +
+                   "emplastname = @LastName, " +
+                   "empcnum = @ContactNumber, " +
+                   "empaddress = @Address, " +
+                   "empbirthdate = @Birthday, " +
+                   "empproject = @Project, " +
+                   "emppostn = @Position, " +
+                   "empstartdate = @StartDate, " +
+                   "empenddate = @EndDate, " +
+                   "image = @ImagePath, " +
+                   "contactname = @EmpContactName, " +
+                   "contactnum = @EmpContactNumber, " +
+                   "contactadd = @EmpContactAddress " +
+                   "WHERE emp_id = '" + idtb.Text + "'; ";
+
+
+
+                    using (SqlCommand cmd = new SqlCommand(query, connect))
+                    {
+                       // cmd.Parameters.AddWithValue("@Id", idtb.Text.Trim());
+                        cmd.Parameters.AddWithValue("@FirstName", fnametb.Text.Trim());
+                        cmd.Parameters.AddWithValue("@MiddleName", mnametb.Text.Trim());
+                        cmd.Parameters.AddWithValue("@LastName", lnametb.Text.Trim());
+                        cmd.Parameters.AddWithValue("@ContactNumber", cnumtb.Text.Trim());
+                        cmd.Parameters.AddWithValue("@Address", addresstb.Text.Trim());
+                        cmd.Parameters.AddWithValue("@Birthday", bday);
+                        cmd.Parameters.AddWithValue("@Project", project);
+                        cmd.Parameters.AddWithValue("@Position", position);
+                        cmd.Parameters.AddWithValue("@StartDate", startDate);
+                        cmd.Parameters.AddWithValue("@EndDate", endDate);
+                        cmd.Parameters.AddWithValue("@ImagePath", path);
+                        cmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
+                        cmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
+                        cmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
+
+                        cmd.ExecuteNonQuery();
+
+                        MessageBox.Show("Record Updated Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        
+                        dataGridView1.DataSource = null;
+                        populate();
+                    }          
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     MessageBox.Show("Error: " + ex, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                { 
+                    connect.Close() ;
+
+                    
                 }
                 }
         }
