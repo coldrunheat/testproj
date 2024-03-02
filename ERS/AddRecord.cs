@@ -31,7 +31,7 @@ namespace ERS
 
         }
 
-        SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;");
+        
 
         private string GenerateEmployeeID()
         {
@@ -42,32 +42,34 @@ namespace ERS
             // Assume conn is your SqlConnection object
             try
             {
-                connect.Open();
-                string query = $"SELECT MAX(emp_id) FROM empdata WHERE emp_id LIKE '{year}%'";
-                SqlCommand cmd = new SqlCommand(query, connect);
-                object result = cmd.ExecuteScalar();
+                using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
+                {
+                    connect.Open();
+                    string query = $"SELECT MAX(emp_id) FROM empdata WHERE emp_id LIKE '{year}%'";
+                    SqlCommand cmd = new SqlCommand(query, connect);
+                    object result = cmd.ExecuteScalar();
 
-                if (result != DBNull.Value)
-                {
-                    int maxID = Convert.ToInt32(result.ToString().Substring(4)); // Extract the numeric part
-                    idNumber = $"{year}{(maxID + 1).ToString("0000")}";
-                }
-                else
-                {
-                    idNumber = $"{year}0001"; // If no records exist for the current year
+                    if (result != DBNull.Value)
+                    {
+                        int maxID = Convert.ToInt32(result.ToString().Substring(4)); // Extract the numeric part
+                        idNumber = $"{year}{(maxID + 1).ToString("0000")}";
+                    }
+                    else
+                    {
+                        idNumber = $"{year}0001"; // If no records exist for the current year
+                    }
                 }
             }
-               catch (Exception ex)
+            catch (Exception ex)
             {
                 MessageBox.Show("Error generating Employee ID: " + ex.Message, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            finally
+           /* finally
             {
                 connect.Close();
-            }
+            } */
             return idNumber;
         }
-
 
 
         private void AddRecord_Load(object sender, EventArgs e)
@@ -103,14 +105,15 @@ namespace ERS
 
         private void button1_Click(object sender, EventArgs e)
         {
-
-                if (string.IsNullOrEmpty(idtb.Text) || string.IsNullOrEmpty(fnametb.Text))
+            if (string.IsNullOrEmpty(idtb.Text) || string.IsNullOrEmpty(fnametb.Text))
                 {
                     MessageBox.Show("Please fill all blank fields", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
                 try
+                {
+                using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
                 {
                     connect.Open();
 
@@ -135,10 +138,10 @@ namespace ERS
                     string startDate = startdatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                     string endDate = enddatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-                    
 
-                string query = "INSERT INTO empdata (emp_id, empfirstname, empmiddlename, emplastname, empcnum, empaddress,empbirthdate, empproject, emppostn, empstartdate, empenddate, image, contactname, contactnum, contactadd) " +
-                    "VALUES (@Id, @FirstName, @MiddleName, @LastName, @ContactNumber, @Address, @Birthday, @Project, @Position, @StartDate, @EndDate, @ImagePath, @EmpContactName, @EmpContactNumber, @EmpContactAddress)";
+
+                    string query = "INSERT INTO empdata (emp_id, empfirstname, empmiddlename, emplastname, empcnum, empaddress,empbirthdate, empproject, emppostn, empstartdate, empenddate, image, contactname, contactnum, contactadd) " +
+                        "VALUES (@Id, @FirstName, @MiddleName, @LastName, @ContactNumber, @Address, @Birthday, @Project, @Position, @StartDate, @EndDate, @ImagePath, @EmpContactName, @EmpContactNumber, @EmpContactAddress)";
 
                     using (SqlCommand cmd = new SqlCommand(query, connect))
                     {
@@ -159,21 +162,22 @@ namespace ERS
                         cmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
 
                         cmd.ExecuteNonQuery();
-                        
+
                         MessageBox.Show("Record Successfully Added", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        connect.Close();
+                       // connect.Close();
                         populate();
                     }
-                
+                }
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show("Error: " + ex.Message, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-                finally
+             /*   finally
                 {
                     connect.Close();
                 }
+             */
             }
 
 
@@ -186,17 +190,22 @@ namespace ERS
 
         private void button3_Click(object sender, EventArgs e)
         {
+
             try
             {
-                connect.Open();
-                string query = "DELETE FROM empdata where emp_id = '" + idtb.Text + "'; ";
-                SqlCommand cmd = new SqlCommand(query, connect);
-                cmd.ExecuteNonQuery();
-                MessageBox.Show("Record Deleted Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                connect.Close();
-                populate();
+                using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
+                {
+                    connect.Open();
+                    string query = "DELETE FROM empdata where emp_id = '" + idtb.Text + "'; ";
+                    SqlCommand cmd = new SqlCommand(query, connect);
+                    cmd.Parameters.AddWithValue("@EmpId", idtb.Text);
+                    cmd.ExecuteNonQuery();
+                    MessageBox.Show("Record Deleted Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    connect.Close();
+                    populate();
+                }
             }
-            catch(Exception Ex)
+            catch (Exception Ex)
             {
                 MessageBox.Show(Ex.Message);
             }
@@ -207,15 +216,17 @@ namespace ERS
         {
             try
             {
-
-                connect.Open();
-                string query = "SELECT * FROM empdata";
-                SqlDataAdapter adapter = new SqlDataAdapter(query, connect);
-                SqlCommandBuilder builder = new SqlCommandBuilder(adapter);
-                var dset = new DataSet();
-                adapter.Fill(dset);
-                dataGridView1.DataSource = dset.Tables[0];
-                connect.Close();
+                using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
+                {
+                    connect.Open();
+                    string query = "SELECT * FROM empdata";
+                    SqlDataAdapter adapter = new SqlDataAdapter(query, connect);
+                    SqlCommandBuilder builder = new SqlCommandBuilder(adapter);
+                    var dset = new DataSet();
+                    adapter.Fill(dset);
+                    dataGridView1.DataSource = dset.Tables[0];
+                   // connect.Close();
+                }
             }
             catch (Exception ex)
             {
@@ -230,11 +241,13 @@ namespace ERS
             {
                 OpenFileDialog dialog = new OpenFileDialog();
                 dialog.Filter = "Image Files (*.jpg; *.png)|*.jpg; *.png";
-                string imagePath = dialog.FileName;
+               
+                //string imagePath = dialog.FileName;
 
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
-                    imagePath = dialog.FileName;
+                    string imagePath = dialog.FileName;
+                   // imagePath = dialog.FileName;
                     profpic.ImageLocation = imagePath;
                 }
             } 
@@ -242,9 +255,6 @@ namespace ERS
             {
                 MessageBox.Show("Error: " + ex, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
-            
-
         }
 
         private void label14_Click(object sender, EventArgs e)
@@ -257,7 +267,7 @@ namespace ERS
 
         }
 
-        
+
 
         private void dataGridView1_CellContentClick_1(object sender, DataGridViewCellEventArgs e)
         {
@@ -267,7 +277,7 @@ namespace ERS
 
             MessageBox.Show($"Clicked on cell in column {columnIndex} and row {rowIndex}");
             */
-          
+
             if (e.RowIndex >= 0)
             {
                 // Get the DataGridViewRow corresponding to the clicked cell
@@ -284,9 +294,14 @@ namespace ERS
                 empcontactname.Text = selectedRow.Cells["contactname"].Value.ToString();
                 empcontactnum.Text = selectedRow.Cells["contactnum"].Value.ToString();
                 empcontactaddress.Text = selectedRow.Cells["contactadd"].Value.ToString();
-
+                bdaydp.Value = Convert.ToDateTime(selectedRow.Cells["empbirthdate"].Value);
+                startdatedp.Value = Convert.ToDateTime(selectedRow.Cells["empstartdate"].Value);
+                enddatedp.Value = Convert.ToDateTime(selectedRow.Cells["empenddate"].Value);
+                profpic.ImageLocation = selectedRow.Cells["image"].Value.ToString();
             }
+        }
 
+        /*
             if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
             {
                 DataGridViewRow selectedRow = dataGridView1.Rows[e.RowIndex];
@@ -376,10 +391,11 @@ namespace ERS
             }
 
         }
-
+        */
 
         private void updaterecordbtn_Click(object sender, EventArgs e)
         {
+
             if (fnametb.Text == "")
             {
                 MessageBox.Show("Missing Information", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -388,87 +404,92 @@ namespace ERS
             {
                 try
                 {
-                    connect.Open();
+                   // SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;");
 
-                    string path = Path.Combine(@"C:\Users\kmo\source\repos\ERS\ERS\Directory\", idtb.Text.Trim() + ".jpg");
-
-                    if (!Directory.Exists(Path.GetDirectoryName(path)))
+                    using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
                     {
-                        Directory.CreateDirectory(Path.GetDirectoryName(path));
-                    }
+                        connect.Open();
 
-                    if (!string.IsNullOrEmpty(profpic.ImageLocation))
-                    {
-                        File.Copy(profpic.ImageLocation, path, true);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Image location is null or empty", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
+                        string path = Path.Combine(@"C:\Users\kmo\source\repos\ERS\ERS\Directory\", idtb.Text.Trim() + ".jpg");
 
-                    string bday = bdaydp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                    string startDate = startdatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                    string endDate = enddatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        if (!Directory.Exists(Path.GetDirectoryName(path)))
+                        {
+                            Directory.CreateDirectory(Path.GetDirectoryName(path));
+                        }
 
-                    string project = projcb.SelectedItem != null ? projcb.SelectedItem.ToString() : "";
-                    string position = emppos.SelectedItem != null ? emppos.SelectedItem.ToString() : "";
+                        if (!string.IsNullOrEmpty(profpic.ImageLocation))
+                        {
+                            File.Copy(profpic.ImageLocation, path, true);
+                        }
+                        else
+                        {
+                            MessageBox.Show("Image location is null or empty", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
 
-                    string query = "UPDATE empdata " + "SET empfirstname = @FirstName, " +
-                   "empmiddlename = @MiddleName, " +
-                   "emplastname = @LastName, " +
-                   "empcnum = @ContactNumber, " +
-                   "empaddress = @Address, " +
-                   "empbirthdate = @Birthday, " +
-                   "empproject = @Project, " +
-                   "emppostn = @Position, " +
-                   "empstartdate = @StartDate, " +
-                   "empenddate = @EndDate, " +
-                   "image = @ImagePath, " +
-                   "contactname = @EmpContactName, " +
-                   "contactnum = @EmpContactNumber, " +
-                   "contactadd = @EmpContactAddress " +
-                   "WHERE emp_id = '" + idtb.Text + "'; ";
+                        string bday = bdaydp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        string startDate = startdatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        string endDate = enddatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+                        string project = projcb.SelectedItem != null ? projcb.SelectedItem.ToString() : "";
+                        string position = emppos.SelectedItem != null ? emppos.SelectedItem.ToString() : "";
+
+                        string query = "UPDATE empdata " + "SET empfirstname = @FirstName, " +
+                       "empmiddlename = @MiddleName, " +
+                       "emplastname = @LastName, " +
+                       "empcnum = @ContactNumber, " +
+                       "empaddress = @Address, " +
+                       "empbirthdate = @Birthday, " +
+                       "empproject = @Project, " +
+                       "emppostn = @Position, " +
+                       "empstartdate = @StartDate, " +
+                       "empenddate = @EndDate, " +
+                       "image = @ImagePath, " +
+                       "contactname = @EmpContactName, " +
+                       "contactnum = @EmpContactNumber, " +
+                       "contactadd = @EmpContactAddress " +
+                       "WHERE emp_id = '" + idtb.Text + "'; ";
 
 
 
-                    using (SqlCommand cmd = new SqlCommand(query, connect))
-                    {
-                       // cmd.Parameters.AddWithValue("@Id", idtb.Text.Trim());
-                        cmd.Parameters.AddWithValue("@FirstName", fnametb.Text.Trim());
-                        cmd.Parameters.AddWithValue("@MiddleName", mnametb.Text.Trim());
-                        cmd.Parameters.AddWithValue("@LastName", lnametb.Text.Trim());
-                        cmd.Parameters.AddWithValue("@ContactNumber", cnumtb.Text.Trim());
-                        cmd.Parameters.AddWithValue("@Address", addresstb.Text.Trim());
-                        cmd.Parameters.AddWithValue("@Birthday", bday);
-                        cmd.Parameters.AddWithValue("@Project", project);
-                        cmd.Parameters.AddWithValue("@Position", position);
-                        cmd.Parameters.AddWithValue("@StartDate", startDate);
-                        cmd.Parameters.AddWithValue("@EndDate", endDate);
-                        cmd.Parameters.AddWithValue("@ImagePath", path);
-                        cmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
-                        cmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
-                        cmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
+                        using (SqlCommand cmd = new SqlCommand(query, connect))
+                        {
+                            // cmd.Parameters.AddWithValue("@Id", idtb.Text.Trim());
+                            cmd.Parameters.AddWithValue("@FirstName", fnametb.Text.Trim());
+                            cmd.Parameters.AddWithValue("@MiddleName", mnametb.Text.Trim());
+                            cmd.Parameters.AddWithValue("@LastName", lnametb.Text.Trim());
+                            cmd.Parameters.AddWithValue("@ContactNumber", cnumtb.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Address", addresstb.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Birthday", bday);
+                            cmd.Parameters.AddWithValue("@Project", project);
+                            cmd.Parameters.AddWithValue("@Position", position);
+                            cmd.Parameters.AddWithValue("@StartDate", startDate);
+                            cmd.Parameters.AddWithValue("@EndDate", endDate);
+                            cmd.Parameters.AddWithValue("@ImagePath", path);
+                            cmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
+                            cmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
+                            cmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
 
-                        cmd.ExecuteNonQuery();
+                            cmd.ExecuteNonQuery();
 
-                        MessageBox.Show("Record Updated Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show("Record Updated Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                            // dataGridView1.DataSource = null;
+
+                            populate();
+                           // dataGridView1.Refresh();
+                           // connect.Close();
+                        }
+
                         
-                        dataGridView1.DataSource = null;
-                        populate();
-                    }          
+                    }
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show("Error: " + ex, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-                finally
-                { 
-                    connect.Close() ;
-
-                    
-                }
-                }
+             }
+            
         }
     }
 }
