@@ -29,6 +29,8 @@
         private void InitializeComponent()
         {
             this.panel1 = new System.Windows.Forms.Panel();
+            this.emppos = new System.Windows.Forms.ComboBox();
+            this.empposition = new System.Windows.Forms.Label();
             this.bdaydp = new System.Windows.Forms.DateTimePicker();
             this.label12 = new System.Windows.Forms.Label();
             this.delrecordbtn = new System.Windows.Forms.Button();
@@ -63,8 +65,6 @@
             this.idtb = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
-            this.emppos = new System.Windows.Forms.ComboBox();
-            this.empposition = new System.Windows.Forms.Label();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.profpic)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
@@ -116,13 +116,38 @@
             this.panel1.TabIndex = 0;
             this.panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.panel1_Paint);
             // 
+            // emppos
+            // 
+            this.emppos.FormattingEnabled = true;
+            this.emppos.Items.AddRange(new object[] {
+            "SR",
+            "TS",
+            "CAS"});
+            this.emppos.Location = new System.Drawing.Point(397, 68);
+            this.emppos.Name = "emppos";
+            this.emppos.Size = new System.Drawing.Size(136, 21);
+            this.emppos.TabIndex = 11;
+            this.emppos.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged_1);
+            // 
+            // empposition
+            // 
+            this.empposition.AutoSize = true;
+            this.empposition.Font = new System.Drawing.Font("Nirmala UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.empposition.Location = new System.Drawing.Point(311, 68);
+            this.empposition.Name = "empposition";
+            this.empposition.Size = new System.Drawing.Size(54, 17);
+            this.empposition.TabIndex = 38;
+            this.empposition.Text = "Position";
+            this.empposition.Click += new System.EventHandler(this.label14_Click);
+            // 
             // bdaydp
             // 
             this.bdaydp.Font = new System.Drawing.Font("Nirmala UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.bdaydp.Location = new System.Drawing.Point(114, 328);
             this.bdaydp.Name = "bdaydp";
             this.bdaydp.Size = new System.Drawing.Size(200, 25);
-            this.bdaydp.TabIndex = 37;
+            this.bdaydp.TabIndex = 9;
+            this.bdaydp.ValueChanged += new System.EventHandler(this.bdaydp_ValueChanged);
             // 
             // label12
             // 
@@ -216,7 +241,8 @@
             this.empcontactnum.Location = new System.Drawing.Point(662, 108);
             this.empcontactnum.Name = "empcontactnum";
             this.empcontactnum.Size = new System.Drawing.Size(170, 25);
-            this.empcontactnum.TabIndex = 29;
+            this.empcontactnum.TabIndex = 15;
+            this.empcontactnum.TextChanged += new System.EventHandler(this.empcontactnum_TextChanged);
             // 
             // emcontactnum
             // 
@@ -234,7 +260,7 @@
             this.empcontactname.Location = new System.Drawing.Point(662, 61);
             this.empcontactname.Name = "empcontactname";
             this.empcontactname.Size = new System.Drawing.Size(170, 25);
-            this.empcontactname.TabIndex = 27;
+            this.empcontactname.TabIndex = 14;
             // 
             // label13
             // 
@@ -263,7 +289,7 @@
             this.enddatedp.Location = new System.Drawing.Point(397, 144);
             this.enddatedp.Name = "enddatedp";
             this.enddatedp.Size = new System.Drawing.Size(200, 25);
-            this.enddatedp.TabIndex = 24;
+            this.enddatedp.TabIndex = 13;
             // 
             // startdatedp
             // 
@@ -271,7 +297,7 @@
             this.startdatedp.Location = new System.Drawing.Point(397, 106);
             this.startdatedp.Name = "startdatedp";
             this.startdatedp.Size = new System.Drawing.Size(200, 25);
-            this.startdatedp.TabIndex = 23;
+            this.startdatedp.TabIndex = 12;
             // 
             // projcb
             // 
@@ -284,7 +310,7 @@
             this.projcb.Location = new System.Drawing.Point(397, 27);
             this.projcb.Name = "projcb";
             this.projcb.Size = new System.Drawing.Size(136, 21);
-            this.projcb.TabIndex = 22;
+            this.projcb.TabIndex = 10;
             this.projcb.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
             // 
             // empcontactaddress
@@ -294,7 +320,7 @@
             this.empcontactaddress.Multiline = true;
             this.empcontactaddress.Name = "empcontactaddress";
             this.empcontactaddress.Size = new System.Drawing.Size(170, 79);
-            this.empcontactaddress.TabIndex = 21;
+            this.empcontactaddress.TabIndex = 16;
             this.empcontactaddress.TextChanged += new System.EventHandler(this.textBox2_TextChanged);
             // 
             // label6
@@ -343,7 +369,7 @@
             this.cnumtb.Location = new System.Drawing.Point(114, 196);
             this.cnumtb.Name = "cnumtb";
             this.cnumtb.Size = new System.Drawing.Size(170, 25);
-            this.cnumtb.TabIndex = 13;
+            this.cnumtb.TabIndex = 7;
             // 
             // label10
             // 
@@ -362,7 +388,7 @@
             this.addresstb.Multiline = true;
             this.addresstb.Name = "addresstb";
             this.addresstb.Size = new System.Drawing.Size(170, 78);
-            this.addresstb.TabIndex = 11;
+            this.addresstb.TabIndex = 8;
             // 
             // label5
             // 
@@ -380,7 +406,7 @@
             this.lnametb.Location = new System.Drawing.Point(114, 149);
             this.lnametb.Name = "lnametb";
             this.lnametb.Size = new System.Drawing.Size(170, 25);
-            this.lnametb.TabIndex = 9;
+            this.lnametb.TabIndex = 6;
             // 
             // label3
             // 
@@ -398,7 +424,7 @@
             this.mnametb.Location = new System.Drawing.Point(114, 108);
             this.mnametb.Name = "mnametb";
             this.mnametb.Size = new System.Drawing.Size(170, 25);
-            this.mnametb.TabIndex = 7;
+            this.mnametb.TabIndex = 5;
             // 
             // label4
             // 
@@ -416,7 +442,7 @@
             this.fnametb.Location = new System.Drawing.Point(114, 65);
             this.fnametb.Name = "fnametb";
             this.fnametb.Size = new System.Drawing.Size(170, 25);
-            this.fnametb.TabIndex = 5;
+            this.fnametb.TabIndex = 4;
             // 
             // label2
             // 
@@ -455,30 +481,6 @@
             this.dataGridView1.Size = new System.Drawing.Size(850, 176);
             this.dataGridView1.TabIndex = 30;
             this.dataGridView1.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick_1);
-            // 
-            // emppos
-            // 
-            this.emppos.FormattingEnabled = true;
-            this.emppos.Items.AddRange(new object[] {
-            "SR",
-            "TS",
-            "CAS"});
-            this.emppos.Location = new System.Drawing.Point(397, 68);
-            this.emppos.Name = "emppos";
-            this.emppos.Size = new System.Drawing.Size(136, 21);
-            this.emppos.TabIndex = 39;
-            this.emppos.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged_1);
-            // 
-            // empposition
-            // 
-            this.empposition.AutoSize = true;
-            this.empposition.Font = new System.Drawing.Font("Nirmala UI", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.empposition.Location = new System.Drawing.Point(311, 68);
-            this.empposition.Name = "empposition";
-            this.empposition.Size = new System.Drawing.Size(54, 17);
-            this.empposition.TabIndex = 38;
-            this.empposition.Text = "Position";
-            this.empposition.Click += new System.EventHandler(this.label14_Click);
             // 
             // AddRecord
             // 

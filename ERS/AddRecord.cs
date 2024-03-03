@@ -19,6 +19,7 @@ namespace ERS
 {
     public partial class AddRecord : UserControl
     {
+        private bool isNewRecord = true;
 
         public AddRecord()
         {
@@ -26,8 +27,14 @@ namespace ERS
 
             dataGridView1.CellClick += dataGridView1_CellContentClick_1;
 
-            string generatedID = GenerateEmployeeID();
-            idtb.Text = generatedID;
+            if (isNewRecord)
+            {
+                string generatedID = GenerateEmployeeID();
+                idtb.Text = generatedID;
+            }
+
+            //  string generatedID = GenerateEmployeeID();
+            //  idtb.Text = generatedID;
 
         }
 
@@ -45,21 +52,74 @@ namespace ERS
                 using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
                 {
                     connect.Open();
-                    string query = $"SELECT MAX(emp_id) FROM empdata WHERE emp_id LIKE '{year}%'";
+                    string query = $"SELECT emp_id FROM empdata WHERE emp_id LIKE '{year}-%' ORDER BY emp_id";
                     SqlCommand cmd = new SqlCommand(query, connect);
-                    object result = cmd.ExecuteScalar();
+                    SqlDataReader reader = cmd.ExecuteReader();
 
-                    if (result != DBNull.Value)
+                    //object result = cmd.ExecuteScalar();
+
+                    int expectedIDNumber = 1;
+                    while (reader.Read())
                     {
+                        string currentID = reader["emp_id"].ToString();
+                        int currentIndex = int.Parse(currentID.Split('-')[1]);
+
+                        // If the current index does not match the expected index, a gap is found
+                        if (currentIndex != expectedIDNumber)
+                        {
+                            idNumber = $"{year}-{expectedIDNumber.ToString("0000")}";
+                            break;
+                        }
+
+                        // If no gaps are found, increment the expected index
+                        expectedIDNumber++;
+                    }
+
+                    // If all existing IDs are sequential, generate the next ID in sequence
+                    if (string.IsNullOrEmpty(idNumber))
+                    {
+                        idNumber = $"{year}-{expectedIDNumber.ToString("0000")}";
+                    }
+
+                    reader.Close();
+                }
+            }
+
+                   /*
+                    if (result != DBNull.Value && result != null)
+                    {
+                        string maxID = result.ToString();
+                        int lastIndex = maxID.LastIndexOf('-');
+
+                        if (lastIndex != -1 && int.TryParse(maxID.Substring(lastIndex + 1), out int maxIDNumber))
+                        {
+                            // Extract the numeric part, increment by 1, and format
+                            idNumber = $"{year}-{(maxIDNumber + 1).ToString("0000")}";
+                        }
+                        else
+                        {
+                            // Error in parsing the existing maxID, fallback to default
+                            idNumber = $"{year}-0001";
+                        }
+
+                        
                         int maxID = Convert.ToInt32(result.ToString().Substring(4)); // Extract the numeric part
-                        idNumber = $"{year}{(maxID + 1).ToString("0000")}";
+                        idNumber = $"{year}-{(maxID + 1).ToString("0000")}";
                     }
                     else
                     {
-                        idNumber = $"{year}0001"; // If no records exist for the current year
+                        idNumber = $"{year}-0001"; // If no records exist for the current year
+                    }
+                        
+                    }
+                    else
+                    {
+                        // No records exist for the current year, start with 0001
+                        idNumber = $"{year}-0001";
                     }
                 }
-            }
+             }
+*/
             catch (Exception ex)
             {
                 MessageBox.Show("Error generating Employee ID: " + ex.Message, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -117,16 +177,21 @@ namespace ERS
                 {
                     connect.Open();
 
-                    string path = Path.Combine(@"C:\Users\kmo\source\repos\ERS\ERS\Directory\", idtb.Text.Trim() + ".jpg");
+                    string directoryPath = Path.Combine(@"C:\Users\kmo\source\repos\ERS\ERS\Directory\", idtb.Text.Trim());
+                    string imagePath = Path.Combine(directoryPath, "image.jpg");
 
-                    if (!Directory.Exists(Path.GetDirectoryName(path)))
+                    if (!Directory.Exists(directoryPath))
                     {
-                        Directory.CreateDirectory(Path.GetDirectoryName(path));
+                        Directory.CreateDirectory(directoryPath);
                     }
 
                     if (!string.IsNullOrEmpty(profpic.ImageLocation))
                     {
-                        File.Copy(profpic.ImageLocation, path, true);
+                        //Copy the image file to the destination path
+                        File.Copy(profpic.ImageLocation, imagePath, true);
+
+                        //Dispose of the Image object to release the file
+                        profpic.Image.Dispose();
                     }
                     else
                     {
@@ -156,7 +221,7 @@ namespace ERS
                         cmd.Parameters.AddWithValue("@Position", emppos.SelectedItem.ToString());
                         cmd.Parameters.AddWithValue("@StartDate", startDate);
                         cmd.Parameters.AddWithValue("@EndDate", endDate);
-                        cmd.Parameters.AddWithValue("@ImagePath", path);
+                        cmd.Parameters.AddWithValue("@ImagePath", imagePath);
                         cmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
                         cmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
                         cmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
@@ -185,6 +250,10 @@ namespace ERS
 
             private void button4_Click(object sender, EventArgs e)
         {
+            ClearControls(this);
+
+            string generatedID = GenerateEmployeeID();
+            idtb.Text = generatedID;
 
         }
 
@@ -234,6 +303,33 @@ namespace ERS
             }
         }
 
+        private void ClearControls(Control control)
+        {
+            foreach (Control c in control.Controls)
+            {
+                if (c is TextBox && c.Name != "idtb")
+                {
+                    ((TextBox)c).Clear(); // Clear textboxes
+                }
+                else if (c is ComboBox)
+                {
+                    ((ComboBox)c).SelectedIndex = -1; // Reset combo boxes
+                }
+                else if (c is DateTimePicker)
+                {
+                    ((DateTimePicker)c).Value = DateTime.Now; // Reset date pickers to default value
+                }
+                else if (c is PictureBox)
+                {
+                    ((PictureBox)c).Image = null;
+                }
+                else if (c.HasChildren)
+                {
+                    ClearControls(c); // Recursively clear controls if they have child controls
+                }
+            }
+        }
+
 
         private void importbtn_Click(object sender, EventArgs e)
         {
@@ -278,12 +374,15 @@ namespace ERS
             MessageBox.Show($"Clicked on cell in column {columnIndex} and row {rowIndex}");
             */
 
-            if (e.RowIndex >= 0)
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
             {
                 // Get the DataGridViewRow corresponding to the clicked cell
                 DataGridViewRow selectedRow = dataGridView1.Rows[e.RowIndex];
 
+                isNewRecord = false;
+
                 // Extract values from the selected row and display them in textboxes
+                idtb.Text = selectedRow.Cells["emp_id"].Value.ToString();
                 fnametb.Text = selectedRow.Cells["empfirstname"].Value.ToString();
                 mnametb.Text = selectedRow.Cells["empmiddlename"].Value.ToString();
                 lnametb.Text = selectedRow.Cells["emplastname"].Value.ToString();
@@ -297,101 +396,178 @@ namespace ERS
                 bdaydp.Value = Convert.ToDateTime(selectedRow.Cells["empbirthdate"].Value);
                 startdatedp.Value = Convert.ToDateTime(selectedRow.Cells["empstartdate"].Value);
                 enddatedp.Value = Convert.ToDateTime(selectedRow.Cells["empenddate"].Value);
-                profpic.ImageLocation = selectedRow.Cells["image"].Value.ToString();
-            }
-        }
 
-        /*
-            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
-            {
-                DataGridViewRow selectedRow = dataGridView1.Rows[e.RowIndex];
-
-                // Retrieve the birthdate value
-                object birthdateObj = selectedRow.Cells["empbirthdate"].Value;
-                if (birthdateObj != null && !string.IsNullOrEmpty(birthdateObj.ToString()))
-                {
-                    DateTime birthdate;
-
-                    if (DateTime.TryParse(birthdateObj.ToString(), out birthdate))
-                    {
-                        // Set the birthdate value to the DateTimePicker
-                        bdaydp.Value = birthdate;
-                    }
-                    else
-                    {
-                        MessageBox.Show("Invalid birthdate format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
+                /*
+                // Set DateTimePicker values
+                if (DateTime.TryParse(selectedRow.Cells["empbirthdate"].Value.ToString(), out DateTime birthdate))
+                    bdaydp.Value = birthdate;
                 else
-                {
-                    MessageBox.Show("Birthdate column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                    bdaydp.Value = DateTime.Now;
 
-                object startdateObj = selectedRow.Cells["empstartdate"].Value;
-                if (startdateObj != null && !string.IsNullOrEmpty(startdateObj.ToString()))
-                {
-                    DateTime startdate;
-
-                    if (DateTime.TryParse(startdateObj.ToString(), out startdate))
-                    {
-                    
-                        startdatedp.Value = startdate;
-                    }
-                    else
-                    {
-                        MessageBox.Show("Invalid start date format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
+                if (DateTime.TryParse(selectedRow.Cells["empstartdate"].Value.ToString(), out DateTime startDate))
+                    startdatedp.Value = startDate;
                 else
-                {
-                    MessageBox.Show("Start date column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                    startdatedp.Value = DateTime.Now;
 
-                object enddateObj = selectedRow.Cells["empenddate"].Value;
-                if (enddateObj != null && !string.IsNullOrEmpty(enddateObj.ToString()))
-                {
-                    DateTime enddate;
-
-                    if (DateTime.TryParse(enddateObj.ToString(), out enddate))
-                    {
-
-                        enddatedp.Value = enddate;
-                    }
-                    else
-                    {
-                        MessageBox.Show("Invalid end date format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
+                if (DateTime.TryParse(selectedRow.Cells["empenddate"].Value.ToString(), out DateTime endDate))
+                    enddatedp.Value = endDate;
                 else
+                    enddatedp.Value = DateTime.Now;
+                */
+
+                // Clear the picture box before loading a new image
+                profpic.Image?.Dispose();
+
+                // Load the image from the file path in the DataGridView
+
+                if (selectedRow.Cells["image"].Value != DBNull.Value)
                 {
-                    MessageBox.Show("End date column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-
-
-                // Retrieve the image path value
-                object imagePathObj = selectedRow.Cells["image"].Value;
-                if (imagePathObj != null && !string.IsNullOrEmpty(imagePathObj.ToString()))
-                {
-                    string imagePath = imagePathObj.ToString();
-
-                    // Display the image in the PictureBox
+                    string imagePath = selectedRow.Cells["image"].Value.ToString();
                     try
                     {
-                        profpic.ImageLocation = imagePath;
+                        // Load the image into the PictureBox control
+                        profpic.Image = System.Drawing.Image.FromFile(imagePath);
                     }
                     catch (Exception ex)
                     {
                         MessageBox.Show("Error loading image: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
-                else
+            }
+        }
+
+
+
+        /*
+        // Load image if available
+        string imagePath = selectedRow.Cells["image"].Value.ToString();
+        if (!string.IsNullOrEmpty(imagePath))
+        {
+            // Check if file exists
+            if (File.Exists(imagePath))
+            {
+                // Load image from file
+                using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
                 {
-                    MessageBox.Show("Image path column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    profpic.Image = Image.FromStream(fs);
                 }
             }
-
+            else
+            {
+                // Display error message if file not found
+                MessageBox.Show("Image file not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                profpic.Image = null;
+            }
         }
-        */
+        else
+        {
+            // Clear picture box if image path is empty
+            profpic.Image = null;
+        }
+    }
+}
+catch (Exception ex)
+{
+// Handle any exceptions and display error message
+MessageBox.Show("An error occurred while loading record details: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+}
+}
+
+
+//Retrieve the Image Path Value
+object imagePathObj = selectedRow.Cells["image"].Value;
+if (imagePathObj != null && !string.IsNullOrEmpty(imagePathObj.ToString()))
+{
+string imagePath = imagePathObj.ToString();
+
+// Display the image in the PictureBox
+try
+{
+profpic.ImageLocation = imagePath;
+}
+catch (Exception ex)
+{
+MessageBox.Show("Error loading image: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+}
+}
+else
+{
+MessageBox.Show("Image path column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+}
+
+
+// profpic.ImageLocation = selectedRow.Cells["image"].Value.ToString();
+}
+}
+
+if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+{
+DataGridViewRow selectedRow = dataGridView1.Rows[e.RowIndex];
+
+// Retrieve the birthdate value
+object birthdateObj = selectedRow.Cells["empbirthdate"].Value;
+if (birthdateObj != null && !string.IsNullOrEmpty(birthdateObj.ToString()))
+{
+DateTime birthdate;
+
+if (DateTime.TryParse(birthdateObj.ToString(), out birthdate))
+{
+// Set the birthdate value to the DateTimePicker
+bdaydp.Value = birthdate;
+}
+else
+{
+MessageBox.Show("Invalid birthdate format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+}
+}
+else
+{
+MessageBox.Show("Birthdate column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+}
+
+object startdateObj = selectedRow.Cells["empstartdate"].Value;
+if (startdateObj != null && !string.IsNullOrEmpty(startdateObj.ToString()))
+{
+DateTime startdate;
+
+if (DateTime.TryParse(startdateObj.ToString(), out startdate))
+{
+
+startdatedp.Value = startdate;
+}
+else
+{
+MessageBox.Show("Invalid start date format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+}
+}
+else
+{
+MessageBox.Show("Start date column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+}
+
+object enddateObj = selectedRow.Cells["empenddate"].Value;
+if (enddateObj != null && !string.IsNullOrEmpty(enddateObj.ToString()))
+{
+DateTime enddate;
+
+if (DateTime.TryParse(enddateObj.ToString(), out enddate))
+{
+
+enddatedp.Value = enddate;
+}
+else
+{
+MessageBox.Show("Invalid end date format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+}
+}
+else
+{
+MessageBox.Show("End date column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+}
+}
+
+}
+*/
 
         private void updaterecordbtn_Click(object sender, EventArgs e)
         {
@@ -410,16 +586,17 @@ namespace ERS
                     {
                         connect.Open();
 
-                        string path = Path.Combine(@"C:\Users\kmo\source\repos\ERS\ERS\Directory\", idtb.Text.Trim() + ".jpg");
+                        string directoryPath = Path.Combine(@"C:\Users\kmo\source\repos\ERS\ERS\Directory\", idtb.Text.Trim());
+                        string imagePath = Path.Combine(directoryPath, "image.jpg");
 
-                        if (!Directory.Exists(Path.GetDirectoryName(path)))
+                        if (!Directory.Exists(directoryPath))
                         {
-                            Directory.CreateDirectory(Path.GetDirectoryName(path));
+                            Directory.CreateDirectory(directoryPath);
                         }
 
                         if (!string.IsNullOrEmpty(profpic.ImageLocation))
                         {
-                            File.Copy(profpic.ImageLocation, path, true);
+                            File.Copy(profpic.ImageLocation, imagePath, true);
                         }
                         else
                         {
@@ -465,7 +642,7 @@ namespace ERS
                             cmd.Parameters.AddWithValue("@Position", position);
                             cmd.Parameters.AddWithValue("@StartDate", startDate);
                             cmd.Parameters.AddWithValue("@EndDate", endDate);
-                            cmd.Parameters.AddWithValue("@ImagePath", path);
+                            cmd.Parameters.AddWithValue("@ImagePath", imagePath);
                             cmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
                             cmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
                             cmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
@@ -490,6 +667,16 @@ namespace ERS
                 }
              }
             
+        }
+
+        private void bdaydp_ValueChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void empcontactnum_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
