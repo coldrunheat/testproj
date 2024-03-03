@@ -47,19 +47,24 @@ namespace ERS
         private void addrecordbtn_Click(object sender, EventArgs e)
         {
             addRecord1.Visible = true;
-            generateCOEID1.Visible = false;
+            GenerateCOEID1.Visible = false;
         }
 
         private void generatebtn_Click(object sender, EventArgs e)
         {
-            addRecord1.Visible = false;
-            generateCOEID1.Visible = true;
+           // addRecord1.Visible = false;
+           // GenerateCOEID1.Visible = true;
         }
 
         private void generatebtn_Click_1(object sender, EventArgs e)
         {
-            addRecord1.Visible = true;
-            generateCOEID1.Visible = false;
+            addRecord1.Visible = false;
+            GenerateCOEID1.Visible = true;
+        }
+
+        private void dashbtn_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -16,6 +17,18 @@ namespace ERS
         {
             InitializeComponent();
         }
+
+        private void fetchdata()
+        {
+            using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
+            {
+                connect.Open();
+
+                connect.Close();
+            }
+            
+        }
+
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
@@ -183,6 +196,21 @@ namespace ERS
         }
 
         private void label9_Click_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox2_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label15_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button1_Click_1(object sender, EventArgs e)
         {
 
         }

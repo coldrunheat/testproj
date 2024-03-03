@@ -14,6 +14,7 @@ using System.Runtime.InteropServices.ComTypes;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using System.Globalization;
+using System.Threading;
 
 namespace ERS
 {
@@ -32,21 +33,14 @@ namespace ERS
                 string generatedID = GenerateEmployeeID();
                 idtb.Text = generatedID;
             }
-
-            //  string generatedID = GenerateEmployeeID();
-            //  idtb.Text = generatedID;
-
         }
 
-        
 
         private string GenerateEmployeeID()
         {
             string year = DateTime.Now.Year.ToString();
             string idNumber = "";
 
-            // Connect to your database and query for the highest ID number for the current year
-            // Assume conn is your SqlConnection object
             try
             {
                 using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
@@ -84,50 +78,10 @@ namespace ERS
                     reader.Close();
                 }
             }
-
-                   /*
-                    if (result != DBNull.Value && result != null)
-                    {
-                        string maxID = result.ToString();
-                        int lastIndex = maxID.LastIndexOf('-');
-
-                        if (lastIndex != -1 && int.TryParse(maxID.Substring(lastIndex + 1), out int maxIDNumber))
-                        {
-                            // Extract the numeric part, increment by 1, and format
-                            idNumber = $"{year}-{(maxIDNumber + 1).ToString("0000")}";
-                        }
-                        else
-                        {
-                            // Error in parsing the existing maxID, fallback to default
-                            idNumber = $"{year}-0001";
-                        }
-
-                        
-                        int maxID = Convert.ToInt32(result.ToString().Substring(4)); // Extract the numeric part
-                        idNumber = $"{year}-{(maxID + 1).ToString("0000")}";
-                    }
-                    else
-                    {
-                        idNumber = $"{year}-0001"; // If no records exist for the current year
-                    }
-                        
-                    }
-                    else
-                    {
-                        // No records exist for the current year, start with 0001
-                        idNumber = $"{year}-0001";
-                    }
-                }
-             }
-*/
             catch (Exception ex)
             {
                 MessageBox.Show("Error generating Employee ID: " + ex.Message, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-           /* finally
-            {
-                connect.Close();
-            } */
             return idNumber;
         }
 
@@ -163,7 +117,7 @@ namespace ERS
         }
 
 
-        private void button1_Click(object sender, EventArgs e)
+        private async void button1_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(idtb.Text) || string.IsNullOrEmpty(fnametb.Text))
                 {
@@ -173,88 +127,89 @@ namespace ERS
 
                 try
                 {
-                using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
+
+                await Task.Run(() =>
                 {
-                    connect.Open();
-
-                    string directoryPath = Path.Combine(@"C:\Users\kmo\source\repos\ERS\ERS\Directory\", idtb.Text.Trim());
-                    string imagePath = Path.Combine(directoryPath, "image.jpg");
-
-                    if (!Directory.Exists(directoryPath))
+                    using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
                     {
-                        Directory.CreateDirectory(directoryPath);
-                    }
+                        connect.Open();
 
-                    if (!string.IsNullOrEmpty(profpic.ImageLocation))
-                    {
-                        //Copy the image file to the destination path
-                        File.Copy(profpic.ImageLocation, imagePath, true);
+                        string directoryPath = Path.Combine(@"C:\Users\kmo\source\repos\ERS\ERS\Directory\", idtb.Text.Trim());
+                        string imagePath = Path.Combine(directoryPath, "image.jpg");
 
-                        //Dispose of the Image object to release the file
-                        profpic.Image.Dispose();
-                    }
-                    else
-                    {
-                        MessageBox.Show("Image location is null or empty", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
+                        if (!Directory.Exists(directoryPath))
+                        {
+                            Directory.CreateDirectory(directoryPath);
+                        }
 
-                    string bday = bdaydp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                    string startDate = startdatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                    string endDate = enddatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        if (!string.IsNullOrEmpty(profpic.ImageLocation))
+                        {
+                            //Copy the image file to the destination path
+                            File.Copy(profpic.ImageLocation, imagePath, true);
+
+                            //Dispose of the Image object to release the file
+                            profpic.Image.Dispose();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Image location is null or empty", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
+
+                        string bday = bdaydp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        string startDate = startdatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        string endDate = enddatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+                        string project = projcb.SelectedItem?.ToString() ?? "";
+                        string position = emppos.SelectedItem?.ToString() ?? "";
 
 
 
-                    string query = "INSERT INTO empdata (emp_id, empfirstname, empmiddlename, emplastname, empcnum, empaddress,empbirthdate, empproject, emppostn, empstartdate, empenddate, image, contactname, contactnum, contactadd) " +
+                        string query = "INSERT INTO empdata (emp_id, empfirstname, empmiddlename, emplastname, empcnum, empaddress,empbirthdate, empproject, emppostn, empstartdate, empenddate, image, contactname, contactnum, contactadd) " +
                         "VALUES (@Id, @FirstName, @MiddleName, @LastName, @ContactNumber, @Address, @Birthday, @Project, @Position, @StartDate, @EndDate, @ImagePath, @EmpContactName, @EmpContactNumber, @EmpContactAddress)";
 
-                    using (SqlCommand cmd = new SqlCommand(query, connect))
-                    {
-                        cmd.Parameters.AddWithValue("@Id", idtb.Text.Trim());
-                        cmd.Parameters.AddWithValue("@FirstName", fnametb.Text.Trim());
-                        cmd.Parameters.AddWithValue("@MiddleName", mnametb.Text.Trim());
-                        cmd.Parameters.AddWithValue("@LastName", lnametb.Text.Trim());
-                        cmd.Parameters.AddWithValue("@ContactNumber", cnumtb.Text.Trim());
-                        cmd.Parameters.AddWithValue("@Address", addresstb.Text.Trim());
-                        cmd.Parameters.AddWithValue("@Birthday", bday);
-                        cmd.Parameters.AddWithValue("@Project", projcb.SelectedItem.ToString());
-                        cmd.Parameters.AddWithValue("@Position", emppos.SelectedItem.ToString());
-                        cmd.Parameters.AddWithValue("@StartDate", startDate);
-                        cmd.Parameters.AddWithValue("@EndDate", endDate);
-                        cmd.Parameters.AddWithValue("@ImagePath", imagePath);
-                        cmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
-                        cmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
-                        cmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
+                        using (SqlCommand cmd = new SqlCommand(query, connect))
+                        {
+                            cmd.Parameters.AddWithValue("@Id", idtb.Text.Trim());
+                            cmd.Parameters.AddWithValue("@FirstName", fnametb.Text.Trim());
+                            cmd.Parameters.AddWithValue("@MiddleName", mnametb.Text.Trim());
+                            cmd.Parameters.AddWithValue("@LastName", lnametb.Text.Trim());
+                            cmd.Parameters.AddWithValue("@ContactNumber", cnumtb.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Address", addresstb.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Birthday", bday);
+                            cmd.Parameters.AddWithValue("@Project", project);
+                            cmd.Parameters.AddWithValue("@Position", position);
+                            cmd.Parameters.AddWithValue("@StartDate", startDate);
+                            cmd.Parameters.AddWithValue("@EndDate", endDate);
+                            cmd.Parameters.AddWithValue("@ImagePath", imagePath);
+                            cmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
+                            cmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
+                            cmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
 
-                        cmd.ExecuteNonQuery();
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+                });
 
                         MessageBox.Show("Record Successfully Added", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
                        // connect.Close();
                         populate();
                     }
-                }
-                }
                 catch (Exception ex)
                 {
                     MessageBox.Show("Error: " + ex.Message, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-             /*   finally
-                {
-                    connect.Close();
-                }
-             */
             }
 
 
 
 
-            private void button4_Click(object sender, EventArgs e)
+            private async void button4_Click(object sender, EventArgs e)
         {
             ClearControls(this);
 
-            string generatedID = GenerateEmployeeID();
+            string generatedID = await Task.Run (() => GenerateEmployeeID());
             idtb.Text = generatedID;
-
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -331,7 +286,7 @@ namespace ERS
         }
 
 
-        private void importbtn_Click(object sender, EventArgs e)
+        private async void importbtn_Click(object sender, EventArgs e)
         {
             try
             {
@@ -344,7 +299,8 @@ namespace ERS
                 {
                     string imagePath = dialog.FileName;
                    // imagePath = dialog.FileName;
-                    profpic.ImageLocation = imagePath;
+                   // profpic.ImageLocation = imagePath;
+                    await LoadImageAsync(imagePath);
                 }
             } 
             catch(Exception ex) 
@@ -364,8 +320,25 @@ namespace ERS
         }
 
 
+        private async Task LoadImageAsync(string imagePath)
+        {
+            try
+            {
+                // Load the image asynchronously
+                using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    profpic.Image = await Task.Run(() => System.Drawing.Image.FromStream(fs));
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading image: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // Log the exception
+                Console.WriteLine($"Error in LoadImageAsync: {ex}");
+            }
+        }
 
-        private void dataGridView1_CellContentClick_1(object sender, DataGridViewCellEventArgs e)
+        private async void dataGridView1_CellContentClick_1(object sender, DataGridViewCellEventArgs e)
         {
             /*
             int columnIndex = e.ColumnIndex;
@@ -373,203 +346,90 @@ namespace ERS
 
             MessageBox.Show($"Clicked on cell in column {columnIndex} and row {rowIndex}");
             */
-
-            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+            try
             {
-                // Get the DataGridViewRow corresponding to the clicked cell
-                DataGridViewRow selectedRow = dataGridView1.Rows[e.RowIndex];
-
-                isNewRecord = false;
-
-                // Extract values from the selected row and display them in textboxes
-                idtb.Text = selectedRow.Cells["emp_id"].Value.ToString();
-                fnametb.Text = selectedRow.Cells["empfirstname"].Value.ToString();
-                mnametb.Text = selectedRow.Cells["empmiddlename"].Value.ToString();
-                lnametb.Text = selectedRow.Cells["emplastname"].Value.ToString();
-                cnumtb.Text = selectedRow.Cells["empcnum"].Value.ToString();
-                addresstb.Text = selectedRow.Cells["empaddress"].Value.ToString();
-                projcb.Text = selectedRow.Cells["empproject"].Value.ToString();
-                emppos.Text = selectedRow.Cells["emppostn"].Value.ToString();
-                empcontactname.Text = selectedRow.Cells["contactname"].Value.ToString();
-                empcontactnum.Text = selectedRow.Cells["contactnum"].Value.ToString();
-                empcontactaddress.Text = selectedRow.Cells["contactadd"].Value.ToString();
-                bdaydp.Value = Convert.ToDateTime(selectedRow.Cells["empbirthdate"].Value);
-                startdatedp.Value = Convert.ToDateTime(selectedRow.Cells["empstartdate"].Value);
-                enddatedp.Value = Convert.ToDateTime(selectedRow.Cells["empenddate"].Value);
-
-                /*
-                // Set DateTimePicker values
-                if (DateTime.TryParse(selectedRow.Cells["empbirthdate"].Value.ToString(), out DateTime birthdate))
-                    bdaydp.Value = birthdate;
-                else
-                    bdaydp.Value = DateTime.Now;
-
-                if (DateTime.TryParse(selectedRow.Cells["empstartdate"].Value.ToString(), out DateTime startDate))
-                    startdatedp.Value = startDate;
-                else
-                    startdatedp.Value = DateTime.Now;
-
-                if (DateTime.TryParse(selectedRow.Cells["empenddate"].Value.ToString(), out DateTime endDate))
-                    enddatedp.Value = endDate;
-                else
-                    enddatedp.Value = DateTime.Now;
-                */
-
-                // Clear the picture box before loading a new image
-                profpic.Image?.Dispose();
-
-                // Load the image from the file path in the DataGridView
-
-                if (selectedRow.Cells["image"].Value != DBNull.Value)
+                if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
                 {
+                    // Get the DataGridViewRow corresponding to the clicked cell
+                    DataGridViewRow selectedRow = dataGridView1.Rows[e.RowIndex];
+
+                    isNewRecord = false;
+
+                    // Extract values from the selected row and display them in textboxes
+                    idtb.Text = selectedRow.Cells["emp_id"].Value.ToString();
+                    fnametb.Text = selectedRow.Cells["empfirstname"].Value.ToString();
+                    mnametb.Text = selectedRow.Cells["empmiddlename"].Value.ToString();
+                    lnametb.Text = selectedRow.Cells["emplastname"].Value.ToString();
+                    cnumtb.Text = selectedRow.Cells["empcnum"].Value.ToString();
+                    addresstb.Text = selectedRow.Cells["empaddress"].Value.ToString();
+                    projcb.Text = selectedRow.Cells["empproject"].Value.ToString();
+                    emppos.Text = selectedRow.Cells["emppostn"].Value.ToString();
+                    empcontactname.Text = selectedRow.Cells["contactname"].Value.ToString();
+                    empcontactnum.Text = selectedRow.Cells["contactnum"].Value.ToString();
+                    empcontactaddress.Text = selectedRow.Cells["contactadd"].Value.ToString();
+                    bdaydp.Value = Convert.ToDateTime(selectedRow.Cells["empbirthdate"].Value);
+                    startdatedp.Value = Convert.ToDateTime(selectedRow.Cells["empstartdate"].Value);
+                    enddatedp.Value = Convert.ToDateTime(selectedRow.Cells["empenddate"].Value);
+
                     string imagePath = selectedRow.Cells["image"].Value.ToString();
-                    try
+
+                    // Clear the picture box before loading a new image
+                    profpic.Image?.Dispose();
+
+                    int maxAttempts = 3;
+                    int delayMilliseconds = 500; // 0.5 seconds
+
+                    for (int attempt = 1; attempt <= maxAttempts; attempt++)
                     {
-                        // Load the image into the PictureBox control
-                        profpic.Image = System.Drawing.Image.FromFile(imagePath);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Error loading image: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        try
+                        {
+                            await LoadImageAsync(imagePath);
+                            // profpic.Image = System.Drawing.Image.FromFile(imagePath);
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error loading image (attempt {attempt}): {ex.Message}");
+
+                            if (attempt == maxAttempts)
+                            {
+                                MessageBox.Show($"Error loading image: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            }
+
+                            Thread.Sleep(delayMilliseconds);
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // Log the exception
+                Console.WriteLine($"Error in dataGridView1_CellContentClick_1: {ex}");
             }
         }
 
 
+            // Load the image from the file path in the DataGridView
 
-        /*
-        // Load image if available
-        string imagePath = selectedRow.Cells["image"].Value.ToString();
-        if (!string.IsNullOrEmpty(imagePath))
-        {
-            // Check if file exists
-            if (File.Exists(imagePath))
+            /*
+            if (selectedRow.Cells["image"].Value != DBNull.Value)
             {
-                // Load image from file
-                using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+                string imagePath = selectedRow.Cells["image"].Value.ToString();
+                try
                 {
-                    profpic.Image = Image.FromStream(fs);
+                    // Load the image into the PictureBox control
+                    profpic.Image = System.Drawing.Image.FromFile(imagePath);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error loading image: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-            else
-            {
-                // Display error message if file not found
-                MessageBox.Show("Image file not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                profpic.Image = null;
-            }
-        }
-        else
-        {
-            // Clear picture box if image path is empty
-            profpic.Image = null;
-        }
-    }
-}
-catch (Exception ex)
-{
-// Handle any exceptions and display error message
-MessageBox.Show("An error occurred while loading record details: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-}
-}
+            */
+  
 
-
-//Retrieve the Image Path Value
-object imagePathObj = selectedRow.Cells["image"].Value;
-if (imagePathObj != null && !string.IsNullOrEmpty(imagePathObj.ToString()))
-{
-string imagePath = imagePathObj.ToString();
-
-// Display the image in the PictureBox
-try
-{
-profpic.ImageLocation = imagePath;
-}
-catch (Exception ex)
-{
-MessageBox.Show("Error loading image: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-}
-}
-else
-{
-MessageBox.Show("Image path column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-}
-
-
-// profpic.ImageLocation = selectedRow.Cells["image"].Value.ToString();
-}
-}
-
-if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
-{
-DataGridViewRow selectedRow = dataGridView1.Rows[e.RowIndex];
-
-// Retrieve the birthdate value
-object birthdateObj = selectedRow.Cells["empbirthdate"].Value;
-if (birthdateObj != null && !string.IsNullOrEmpty(birthdateObj.ToString()))
-{
-DateTime birthdate;
-
-if (DateTime.TryParse(birthdateObj.ToString(), out birthdate))
-{
-// Set the birthdate value to the DateTimePicker
-bdaydp.Value = birthdate;
-}
-else
-{
-MessageBox.Show("Invalid birthdate format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-}
-}
-else
-{
-MessageBox.Show("Birthdate column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-}
-
-object startdateObj = selectedRow.Cells["empstartdate"].Value;
-if (startdateObj != null && !string.IsNullOrEmpty(startdateObj.ToString()))
-{
-DateTime startdate;
-
-if (DateTime.TryParse(startdateObj.ToString(), out startdate))
-{
-
-startdatedp.Value = startdate;
-}
-else
-{
-MessageBox.Show("Invalid start date format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-}
-}
-else
-{
-MessageBox.Show("Start date column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-}
-
-object enddateObj = selectedRow.Cells["empenddate"].Value;
-if (enddateObj != null && !string.IsNullOrEmpty(enddateObj.ToString()))
-{
-DateTime enddate;
-
-if (DateTime.TryParse(enddateObj.ToString(), out enddate))
-{
-
-enddatedp.Value = enddate;
-}
-else
-{
-MessageBox.Show("Invalid end date format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-}
-}
-else
-{
-MessageBox.Show("End date column is empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-}
-}
-
-}
-*/
-
-        private void updaterecordbtn_Click(object sender, EventArgs e)
+        private async void updaterecordbtn_Click(object sender, EventArgs e)
         {
 
             if (fnametb.Text == "")
@@ -580,87 +440,82 @@ MessageBox.Show("End date column is empty.", "Error", MessageBoxButtons.OK, Mess
             {
                 try
                 {
-                   // SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;");
-
-                    using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
+                    await Task.Run(() =>
                     {
-                        connect.Open();
-
-                        string directoryPath = Path.Combine(@"C:\Users\kmo\source\repos\ERS\ERS\Directory\", idtb.Text.Trim());
-                        string imagePath = Path.Combine(directoryPath, "image.jpg");
-
-                        if (!Directory.Exists(directoryPath))
+                        using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
                         {
-                            Directory.CreateDirectory(directoryPath);
+                            connect.Open();
+
+                            string directoryPath = Path.Combine(@"C:\Users\kmo\source\repos\ERS\ERS\Directory\", idtb.Text.Trim());
+                            string imagePath = Path.Combine(directoryPath, "image.jpg");
+
+                            if (!Directory.Exists(directoryPath))
+                            {
+                                Directory.CreateDirectory(directoryPath);
+                            }
+
+                            if (!string.IsNullOrEmpty(profpic.ImageLocation))
+                            {
+                                File.Copy(profpic.ImageLocation, imagePath, true);
+                            }
+                            else
+                            {
+                                MessageBox.Show("Image location is null or empty", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                return;
+                            }
+
+                            string bday = bdaydp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                            string startDate = startdatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                            string endDate = enddatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+                            string project = projcb.SelectedItem != null ? projcb.SelectedItem.ToString() : "";
+                            string position = emppos.SelectedItem != null ? emppos.SelectedItem.ToString() : "";
+
+                            string query = "UPDATE empdata " + "SET empfirstname = @FirstName, " +
+                           "empmiddlename = @MiddleName, " +
+                           "emplastname = @LastName, " +
+                           "empcnum = @ContactNumber, " +
+                           "empaddress = @Address, " +
+                           "empbirthdate = @Birthday, " +
+                           "empproject = @Project, " +
+                           "emppostn = @Position, " +
+                           "empstartdate = @StartDate, " +
+                           "empenddate = @EndDate, " +
+                           "image = @ImagePath, " +
+                           "contactname = @EmpContactName, " +
+                           "contactnum = @EmpContactNumber, " +
+                           "contactadd = @EmpContactAddress " +
+                           "WHERE emp_id = '" + idtb.Text + "'; ";
+
+
+
+                            using (SqlCommand cmd = new SqlCommand(query, connect))
+                            {
+                                // cmd.Parameters.AddWithValue("@Id", idtb.Text.Trim());
+                                cmd.Parameters.AddWithValue("@FirstName", fnametb.Text.Trim());
+                                cmd.Parameters.AddWithValue("@MiddleName", mnametb.Text.Trim());
+                                cmd.Parameters.AddWithValue("@LastName", lnametb.Text.Trim());
+                                cmd.Parameters.AddWithValue("@ContactNumber", cnumtb.Text.Trim());
+                                cmd.Parameters.AddWithValue("@Address", addresstb.Text.Trim());
+                                cmd.Parameters.AddWithValue("@Birthday", bday);
+                                cmd.Parameters.AddWithValue("@Project", project);
+                                cmd.Parameters.AddWithValue("@Position", position);
+                                cmd.Parameters.AddWithValue("@StartDate", startDate);
+                                cmd.Parameters.AddWithValue("@EndDate", endDate);
+                                cmd.Parameters.AddWithValue("@ImagePath", imagePath);
+                                cmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
+                                cmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
+                                cmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
+
+                                cmd.ExecuteNonQuery();
+                            }
                         }
+                    });
+                    MessageBox.Show("Record Updated Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                        if (!string.IsNullOrEmpty(profpic.ImageLocation))
-                        {
-                            File.Copy(profpic.ImageLocation, imagePath, true);
-                        }
-                        else
-                        {
-                            MessageBox.Show("Image location is null or empty", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-                        }
-
-                        string bday = bdaydp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                        string startDate = startdatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                        string endDate = enddatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-
-                        string project = projcb.SelectedItem != null ? projcb.SelectedItem.ToString() : "";
-                        string position = emppos.SelectedItem != null ? emppos.SelectedItem.ToString() : "";
-
-                        string query = "UPDATE empdata " + "SET empfirstname = @FirstName, " +
-                       "empmiddlename = @MiddleName, " +
-                       "emplastname = @LastName, " +
-                       "empcnum = @ContactNumber, " +
-                       "empaddress = @Address, " +
-                       "empbirthdate = @Birthday, " +
-                       "empproject = @Project, " +
-                       "emppostn = @Position, " +
-                       "empstartdate = @StartDate, " +
-                       "empenddate = @EndDate, " +
-                       "image = @ImagePath, " +
-                       "contactname = @EmpContactName, " +
-                       "contactnum = @EmpContactNumber, " +
-                       "contactadd = @EmpContactAddress " +
-                       "WHERE emp_id = '" + idtb.Text + "'; ";
-
-
-
-                        using (SqlCommand cmd = new SqlCommand(query, connect))
-                        {
-                            // cmd.Parameters.AddWithValue("@Id", idtb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@FirstName", fnametb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@MiddleName", mnametb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@LastName", lnametb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@ContactNumber", cnumtb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@Address", addresstb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@Birthday", bday);
-                            cmd.Parameters.AddWithValue("@Project", project);
-                            cmd.Parameters.AddWithValue("@Position", position);
-                            cmd.Parameters.AddWithValue("@StartDate", startDate);
-                            cmd.Parameters.AddWithValue("@EndDate", endDate);
-                            cmd.Parameters.AddWithValue("@ImagePath", imagePath);
-                            cmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
-                            cmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
-                            cmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
-
-                            cmd.ExecuteNonQuery();
-
-                            MessageBox.Show("Record Updated Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                            // dataGridView1.DataSource = null;
-
-                            populate();
-                           // dataGridView1.Refresh();
-                           // connect.Close();
-                        }
-
-                        
-                    }
+                    populate();
                 }
+
                 catch (Exception ex)
                 {
                     MessageBox.Show("Error: " + ex, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
