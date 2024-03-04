@@ -15,6 +15,7 @@ using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using System.Globalization;
 using System.Threading;
+using System.Runtime.Remoting.Contexts;
 
 namespace ERS
 {
@@ -49,8 +50,6 @@ namespace ERS
                     string query = $"SELECT emp_id FROM empdata WHERE emp_id LIKE '{year}-%' ORDER BY emp_id";
                     SqlCommand cmd = new SqlCommand(query, connect);
                     SqlDataReader reader = cmd.ExecuteReader();
-
-                    //object result = cmd.ExecuteScalar();
 
                     int expectedIDNumber = 1;
                     while (reader.Read())
@@ -121,7 +120,7 @@ namespace ERS
         {
             try
             {
-            if (string.IsNullOrEmpty(idtb.Text) || string.IsNullOrEmpty(fnametb.Text))
+                if (string.IsNullOrEmpty(idtb.Text) || string.IsNullOrEmpty(fnametb.Text))
                 {
                     MessageBox.Show("Please fill all blank fields", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
@@ -140,66 +139,74 @@ namespace ERS
                 }
 
 
-                    using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
-                    {
-                        connect.Open();
-
-                        string directoryPath = Path.Combine(@"C:\Users\kmo\source\repos\ERS\ERS\Directory\", idtb.Text.Trim());
-                        string imagePath = Path.Combine(directoryPath, "image.jpg");
-
-
-                        if (!Directory.Exists(directoryPath))
-                        {
-                            Directory.CreateDirectory(directoryPath);
-                        }
-
-                        File.Copy(profpic.ImageLocation, imagePath, true);
-
-                        string bday = bdaydp.Value.ToString("MM-dd-yyyy", CultureInfo.InvariantCulture);
-                        string startDate = startdatedp.Value.ToString("MM-dd-yyyy", CultureInfo.InvariantCulture);
-                        string endDate = enddatedp.Value.ToString("MM-dd-yyyy", CultureInfo.InvariantCulture);
-
-                        string project = projcb.SelectedItem?.ToString() ?? "";
-                        string position = emppos.SelectedItem?.ToString() ?? "";
-
-
-
-                        string query = "INSERT INTO empdata (emp_id, empfirstname, empmiddlename, emplastname, empcnum, empaddress,empbirthdate, empproject, emppostn, empstartdate, empenddate, image, contactname, contactnum, contactadd) " +
-                        "VALUES (@Id, @FirstName, @MiddleName, @LastName, @ContactNumber, @Address, @Birthday, @Project, @Position, @StartDate, @EndDate, @ImagePath, @EmpContactName, @EmpContactNumber, @EmpContactAddress)";
-
-                        using (SqlCommand cmd = new SqlCommand(query, connect))
-                        {
-                            cmd.Parameters.AddWithValue("@Id", idtb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@FirstName", fnametb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@MiddleName", mnametb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@LastName", lnametb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@ContactNumber", cnumtb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@Address", addresstb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@Birthday", bday);
-                            cmd.Parameters.AddWithValue("@Project", project);
-                            cmd.Parameters.AddWithValue("@Position", position);
-                            cmd.Parameters.AddWithValue("@StartDate", startDate);
-                            cmd.Parameters.AddWithValue("@EndDate", endDate);
-                            cmd.Parameters.AddWithValue("@ImagePath", imagePath);
-                            cmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
-                            cmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
-                            cmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
-
-                            cmd.ExecuteNonQuery();
-                        }
-                    }
-
-                        MessageBox.Show("Record Successfully Added", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                       // connect.Close();
-                        populate();
-                    }
-                catch (Exception ex)
+                using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
                 {
-                    MessageBox.Show("Error: " + ex.Message, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    connect.Open();
+
+                    string directoryPath = Path.Combine(@"C:\Users\kmo\source\repos\ERS\ERS\Directory\", idtb.Text.Trim());
+                    string imagePath = Path.Combine(directoryPath, "image.jpg");
+
+
+                    if (!Directory.Exists(directoryPath))
+                    {
+                        Directory.CreateDirectory(directoryPath);
+                    }
+
+                    File.Copy(profpic.ImageLocation, imagePath, true);
+
+                    string bday = bdaydp.Value.ToString("MM-dd-yyyy", CultureInfo.InvariantCulture);
+                    string startDate = startdatedp.Value.ToString("MM-dd-yyyy", CultureInfo.InvariantCulture);
+                    string endDate = enddatedp.Value.ToString("MM-dd-yyyy", CultureInfo.InvariantCulture);
+
+                    string project = projcb.SelectedItem?.ToString() ?? "";
+                    string position = emppos.SelectedItem?.ToString() ?? "";
+
+
+
+                    string empDataQuery = "INSERT INTO empdata (emp_id, empfirstname, empmiddlename, emplastname, empcnum, empaddress,empbirthdate, empproject, emppostn, empstartdate, empenddate, contactname, contactnum, contactadd) " +
+                    "VALUES (@Id, @FirstName, @MiddleName, @LastName, @ContactNumber, @Address, @Birthday, @Project, @Position, @StartDate, @EndDate, @EmpContactName, @EmpContactNumber, @EmpContactAddress)";
+
+                    using (SqlCommand empDatacmd = new SqlCommand(empDataQuery, connect))
+                    {
+                        empDatacmd.Parameters.AddWithValue("@Id", idtb.Text.Trim());
+                        empDatacmd.Parameters.AddWithValue("@FirstName", fnametb.Text.Trim());
+                        empDatacmd.Parameters.AddWithValue("@MiddleName", mnametb.Text.Trim());
+                        empDatacmd.Parameters.AddWithValue("@LastName", lnametb.Text.Trim());
+                        empDatacmd.Parameters.AddWithValue("@ContactNumber", cnumtb.Text.Trim());
+                        empDatacmd.Parameters.AddWithValue("@Address", addresstb.Text.Trim());
+                        empDatacmd.Parameters.AddWithValue("@Birthday", bday);
+                        empDatacmd.Parameters.AddWithValue("@Project", project);
+                        empDatacmd.Parameters.AddWithValue("@Position", position);
+                        empDatacmd.Parameters.AddWithValue("@StartDate", startDate);
+                        empDatacmd.Parameters.AddWithValue("@EndDate", endDate);
+                        empDatacmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
+                        empDatacmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
+                        empDatacmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
+
+                        empDatacmd.ExecuteNonQuery();
+                    }
+
+                    string empImagesQuery = "INSERT INTO emp_images (emp_id, image_path) VALUES (@Id, @ImagePath)";
+
+                    using (SqlCommand empImagesCmd = new SqlCommand(empImagesQuery, connect))
+                    {
+                        empImagesCmd.Parameters.AddWithValue("@Id", idtb.Text.Trim());
+                        empImagesCmd.Parameters.AddWithValue("@ImagePath", imagePath);
+
+                        empImagesCmd.ExecuteNonQuery();
+                    }
+
+
+                    MessageBox.Show("Record Successfully Added", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    // connect.Close();
+                    populate();
                 }
             }
-
-
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            }
 
 
             private void button4_Click(object sender, EventArgs e)
@@ -218,12 +225,26 @@ namespace ERS
                 using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
                 {
                     connect.Open();
-                    string query = "DELETE FROM empdata where emp_id = '" + idtb.Text + "'; ";
-                    SqlCommand cmd = new SqlCommand(query, connect);
-                    cmd.Parameters.AddWithValue("@EmpId", idtb.Text);
-                    cmd.ExecuteNonQuery();
+
+                    string deleteImagesQuery = "DELETE FROM emp_images WHERE emp_id = @EmpId";
+                    using (SqlCommand deleteImagesCmd = new SqlCommand(deleteImagesQuery, connect))
+                    {
+                        deleteImagesCmd.Parameters.AddWithValue("@EmpId", idtb.Text);
+                        deleteImagesCmd.ExecuteNonQuery();
+                    }
+
+
+                    string deleteDataQuery = "DELETE FROM empdata where emp_id = '" + idtb.Text + "'; ";
+
+                    using (SqlCommand deleteDataCmd = new SqlCommand(deleteDataQuery, connect))
+                    {
+                        deleteDataCmd.Parameters.AddWithValue("@EmpId", idtb.Text);
+                        deleteDataCmd.ExecuteNonQuery();
+                    }
+
+    
                     MessageBox.Show("Record Deleted Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    connect.Close();
+            
                     populate();
                 }
             }
@@ -231,7 +252,6 @@ namespace ERS
             {
                 MessageBox.Show(Ex.Message);
             }
-
         }
         
         private void populate() 
@@ -247,7 +267,6 @@ namespace ERS
                     var dset = new DataSet();
                     adapter.Fill(dset);
                     dataGridView1.DataSource = dset.Tables[0];
-                   // connect.Close();
                 }
             }
             catch (Exception ex)
@@ -358,29 +377,31 @@ namespace ERS
                     startdatedp.Value = Convert.ToDateTime(selectedRow.Cells["empstartdate"].Value);
                     enddatedp.Value = Convert.ToDateTime(selectedRow.Cells["empenddate"].Value);
 
-                    string imagePath = selectedRow.Cells["image"].Value.ToString();
 
-                    if (!string.IsNullOrEmpty(imagePath))
+                    using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
                     {
-                        // Load the image into the picture box
-                        using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+                        connect.Open();
+                        string imagePathQuery = $"SELECT image_path FROM emp_images WHERE emp_id = '{idtb.Text}'";
+                        SqlCommand cmd = new SqlCommand(imagePathQuery, connect);
+                        string imagePath = cmd.ExecuteScalar()?.ToString();
+
+                        if (!string.IsNullOrEmpty(imagePath))
                         {
-                            profpic.Image = System.Drawing.Image.FromStream(fs);
+                            using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+                            {
+                                profpic.Image = System.Drawing.Image.FromStream(fs);
+                            }
                         }
                     }
-                    else
-                    {
-
-                        // Clear the picture box before loading a new image
-                       // profpic.Image?.Dispose();
-                    }
                 }
+
+
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 // Log the exception
-                Console.WriteLine($"Error in dataGridView1_CellContentClick_1: {ex}");
+               // Console.WriteLine($"Error in dataGridView1_CellContentClick_1: {ex}");
             }
         }
 
@@ -413,19 +434,6 @@ namespace ERS
                         MessageBox.Show("Image file does not exist at the specified location.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
-                        /*
-                       string imageExtension = Path.GetExtension(profpic.ImageLocation); // Get the extension from the original image
-                       imagePath = Path.ChangeExtension(imagePath, imageExtension); // Update imagePath with correct extension
-
-                       File.Copy(profpic.ImageLocation, imagePath, true);
-                        
-                    }
-                        else
-                        {
-                            MessageBox.Show("Image location is null or empty", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-                        }
-                        */
 
                         string bday = bdaydp.Value.ToString("MM-dd-yyyy", CultureInfo.InvariantCulture);
                         string startDate = startdatedp.Value.ToString("MM-dd-yyyy", CultureInfo.InvariantCulture);
@@ -434,7 +442,7 @@ namespace ERS
                         string project = projcb.SelectedItem != null ? projcb.SelectedItem.ToString() : "";
                         string position = emppos.SelectedItem != null ? emppos.SelectedItem.ToString() : "";
 
-                        string query = "UPDATE empdata " + "SET empfirstname = @FirstName, " +
+                        string updateDataQuery = "UPDATE empdata " + "SET empfirstname = @FirstName, " +
                        "empmiddlename = @MiddleName, " +
                        "emplastname = @LastName, " +
                        "empcnum = @ContactNumber, " +
@@ -452,33 +460,42 @@ namespace ERS
 
 
 
-                        using (SqlCommand cmd = new SqlCommand(query, connect))
+                        using (SqlCommand updateDataCmd = new SqlCommand(updateDataQuery, connect))
                         {
                             // cmd.Parameters.AddWithValue("@Id", idtb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@FirstName", fnametb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@MiddleName", mnametb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@LastName", lnametb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@ContactNumber", cnumtb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@Address", addresstb.Text.Trim());
-                            cmd.Parameters.AddWithValue("@Birthday", bday);
-                            cmd.Parameters.AddWithValue("@Project", project);
-                            cmd.Parameters.AddWithValue("@Position", position);
-                            cmd.Parameters.AddWithValue("@StartDate", startDate);
-                            cmd.Parameters.AddWithValue("@EndDate", endDate);
-                            cmd.Parameters.AddWithValue("@ImagePath", imagePath);
-                            cmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
-                            cmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
-                            cmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
+                            updateDataCmd.Parameters.AddWithValue("@FirstName", fnametb.Text.Trim());
+                            updateDataCmd.Parameters.AddWithValue("@MiddleName", mnametb.Text.Trim());
+                            updateDataCmd.Parameters.AddWithValue("@LastName", lnametb.Text.Trim());
+                            updateDataCmd.Parameters.AddWithValue("@ContactNumber", cnumtb.Text.Trim());
+                            updateDataCmd.Parameters.AddWithValue("@Address", addresstb.Text.Trim());
+                            updateDataCmd.Parameters.AddWithValue("@Birthday", bday);
+                            updateDataCmd.Parameters.AddWithValue("@Project", project);
+                            updateDataCmd.Parameters.AddWithValue("@Position", position);
+                            updateDataCmd.Parameters.AddWithValue("@StartDate", startDate);
+                            updateDataCmd.Parameters.AddWithValue("@EndDate", endDate);
+                            updateDataCmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
+                            updateDataCmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
+                            updateDataCmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
 
 
-                            cmd.ExecuteNonQuery();
+                            updateDataCmd.ExecuteNonQuery();
 
-                            MessageBox.Show("Record Updated Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                            populate();
                         }
-                    }
+                        
+                        string updateImagesQuery = "UPDATE emp_images SET image_path = @ImagePath WHERE emp_id = @EmpId";
+                        using (SqlCommand updateImagesCmd = new SqlCommand(updateImagesQuery, connect))
+                        {
+                            updateImagesCmd.Parameters.AddWithValue("@EmpId", idtb.Text.Trim());
+                            updateImagesCmd.Parameters.AddWithValue("@ImagePath", imagePath);
+
+                            updateImagesCmd.ExecuteNonQuery();
+                        }
+
+                    MessageBox.Show("Record Updated Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    populate();
                 }
+              }
 
                 catch (Exception ex)
                 {

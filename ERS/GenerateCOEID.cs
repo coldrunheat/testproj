@@ -42,14 +42,23 @@ namespace ERS
                     // Check if any rows were returned
                     if (dt.Rows.Count == 0)
                     {
-                        MessageBox.Show("No records found for the specified last name.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show("No record found for the specified last name.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return; // Exit the method
                     }
 
                     foreach (DataRow dr in dt.Rows)
                     {
+                        string empId = dr["emp_id"].ToString();
 
-                        string imagePath = dr["image"].ToString();
+                        string imagePathQuery = "SELECT image_path FROM emp_images WHERE emp_id = @EmpId";
+                        SqlCommand imagePathCmd = new SqlCommand(imagePathQuery, connect);
+                        imagePathCmd.Parameters.AddWithValue("@EmpId", empId);
+                        object result = imagePathCmd.ExecuteScalar();
+
+
+                        if (result != null) 
+                        {
+                            string imagePath = result.ToString();
 
                         if (System.IO.File.Exists(imagePath))
                         {
@@ -60,7 +69,6 @@ namespace ERS
                                 {
                                     pbsearch.Image = Image.FromStream(fs);
                                 }
-
                             }
                             catch (Exception ex)
                             {
@@ -73,7 +81,11 @@ namespace ERS
                             // Handle case where file does not exist
                             MessageBox.Show("Image file does not exist: " + imagePath, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
-
+                        }
+                        else
+                        {
+                            MessageBox.Show("No image found for employee ID: " + empId, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
 
                         idnumsearch.Text = dr["emp_id"].ToString();
                         fnamesearch.Text = dr["empfirstname"].ToString();
