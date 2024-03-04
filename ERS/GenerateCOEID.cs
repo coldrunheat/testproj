@@ -6,6 +6,7 @@ using System.Data.SqlClient;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -395,7 +396,52 @@ namespace ERS
                 // Extract the first letter from the middle name and add a period
                 string middleInitial = mnamesearch.Text.Length > 0 ? mnamesearch.Text[0] + "." : "";
 
-                e.Graphics.DrawString("This is to certify that " +fnamesearch.Text + " " + middleInitial + " " + lnamesearch1.Text, new Font("Arial", 20), Brushes.Black, new Point(100, 320));
+                e.Graphics.DrawString("This is to certify that " + fnamesearch.Text + " " + middleInitial + " " + lnamesearch1.Text + ", has been hired as a Contract of", new Font("Arial", 16), Brushes.Black, new Point(60, 270));
+                e.Graphics.DrawString("Service Worker at the Philippine Statistics Authority - Davao", new Font("Arial", 16), Brushes.Black, new Point(60, 300));
+                e.Graphics.DrawString("Occidental Provincial Statistical Office for the following activities: ", new Font("Arial", 16), Brushes.Black, new Point(60, 330));
+                //  e.Graphics.DrawString("following activities: ", new Font("Arial", 20), Brushes.Black, new Point(100, 360));
+
+                // Define table dimensions
+                int numRows = 3;
+                int numCols = 3;
+                float cellWidth = 150;
+                float cellHeight = 30;
+
+                // Define starting position of the table
+                float startX = 200;
+                float startY = 380;
+
+                // Draw table outline
+                for (int row = 0; row <= numRows; row++)
+                {
+                    e.Graphics.DrawLine(Pens.Black, startX, startY + row * cellHeight, startX + numCols * cellWidth, startY + row * cellHeight);
+                }
+
+                for (int col = 0; col <= numCols; col++)
+                {
+                    e.Graphics.DrawLine(Pens.Black, startX + col * cellWidth, startY, startX + col * cellWidth, startY + numRows * cellHeight);
+                }
+
+                // Draw cell contents
+                string[,] contents = {
+        { "ACTIVITY", "POSITION", "PERIOD COVERED"  },
+        { " + projectsearch.Text + ", "Row 2, Col 2", "Row 2, Col 3" },
+        { "Row 3, Col 1", "Row 3, Col 2", "Row 3, Col 3" }
+    };
+
+                for (int row = 0; row < numRows; row++)
+                {
+                    for (int col = 0; col < numCols; col++)
+                    {
+                        string text = contents[row, col];
+                        float x = startX + col * cellWidth + 5; // Add padding
+                        float y = startY + row * cellHeight + 5; // Add padding
+                        e.Graphics.DrawString(text, new Font("Arial", 12), Brushes.Black, x, y);
+                    }
+                }
+
+
+
 
             }
             catch (Exception ex)
