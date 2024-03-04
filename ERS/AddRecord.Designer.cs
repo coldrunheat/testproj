@@ -120,9 +120,9 @@
             // 
             this.emppos.FormattingEnabled = true;
             this.emppos.Items.AddRange(new object[] {
-            "SR",
-            "TS",
-            "CAS"});
+            "Enumerator",
+            "Team Supervisor",
+            "Census Area Supervisor"});
             this.emppos.Location = new System.Drawing.Point(397, 68);
             this.emppos.Name = "emppos";
             this.emppos.Size = new System.Drawing.Size(136, 21);
@@ -230,7 +230,7 @@
             this.profpic.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.profpic.Location = new System.Drawing.Point(411, 187);
             this.profpic.Name = "profpic";
-            this.profpic.Size = new System.Drawing.Size(138, 127);
+            this.profpic.Size = new System.Drawing.Size(120, 120);
             this.profpic.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.profpic.TabIndex = 30;
             this.profpic.TabStop = false;
@@ -303,10 +303,9 @@
             // 
             this.projcb.FormattingEnabled = true;
             this.projcb.Items.AddRange(new object[] {
-            "CBMS",
-            "NICTHS",
-            "FIES",
-            "AgStat"});
+            "Community Based Monitoring System (CBMS)",
+            "Family Income and Expenditure Survey (FIES)",
+            "Census of Agriculture and Fisheries (CAF)"});
             this.projcb.Location = new System.Drawing.Point(397, 27);
             this.projcb.Name = "projcb";
             this.projcb.Size = new System.Drawing.Size(136, 21);

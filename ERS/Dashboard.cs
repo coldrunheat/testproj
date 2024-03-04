@@ -66,5 +66,10 @@ namespace ERS
         {
 
         }
+
+        private void GenerateCOEID1_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }

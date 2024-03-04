@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,17 +17,117 @@ namespace ERS
         public GenerateCOEID()
         {
             InitializeComponent();
+
+            // Attach the KeyDown event handler to the text box
+            lnamesearch.KeyDown += TextBoxSearch_KeyDown;
         }
 
         private void fetchdata()
         {
-            using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
+            try
             {
-                connect.Open();
+                using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
+                {
+                    connect.Open();
 
-                connect.Close();
+                    string query = "SELECT * FROM empdata WHERE emplastname = @LastName";
+                    SqlCommand cmd = new SqlCommand(query, connect);
+                    cmd.Parameters.AddWithValue("@LastName", lnamesearch.Text.Trim());
+
+                    DataTable dt = new DataTable();
+                    SqlDataAdapter sda = new SqlDataAdapter(cmd);
+                    sda.Fill(dt);
+
+                    // Check if any rows were returned
+                    if (dt.Rows.Count == 0)
+                    {
+                        MessageBox.Show("No records found for the specified last name.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return; // Exit the method
+                    }
+
+                    foreach (DataRow dr in dt.Rows)
+                    {
+
+                        string imagePath = dr["image"].ToString();
+
+                        if (System.IO.File.Exists(imagePath))
+                        {
+                            try
+                            {
+                                // Load the image into the PictureBox
+                                using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+                                {
+                                    pbsearch.Image = Image.FromStream(fs);
+                                }
+
+                            }
+                            catch (Exception ex)
+                            {
+                                // Handle any exceptions that occur during image loading
+                                MessageBox.Show("Error loading image: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            }
+                        }
+                        else
+                        {
+                            // Handle case where file does not exist
+                            MessageBox.Show("Image file does not exist: " + imagePath, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+
+
+                        idnumsearch.Text = dr["emp_id"].ToString();
+                        fnamesearch.Text = dr["empfirstname"].ToString();
+                        mnamesearch.Text = dr["empmiddlename"].ToString();
+                        lnamesearch1.Text = dr["emplastname"].ToString();
+                        addresssearch.Text = dr["empaddress"].ToString();
+                        cnumsearch.Text = dr["empcnum"].ToString();
+
+                        DateTime birthdate;
+                        if (DateTime.TryParse(dr["empbirthdate"].ToString(), out birthdate))
+                        {
+                            bdaysearch.Text = birthdate.ToString("MM/dd/yyyy");
+                        }
+                        else
+                        {
+                            bdaysearch.Text = "Invalid Date";
+                        }
+
+                        projectsearch.Text = dr["empproject"].ToString();
+                        positionsearch.Text = dr["emppostn"].ToString();
+
+                        DateTime startDate;
+                        if (DateTime.TryParse(dr["empstartdate"].ToString(), out startDate))
+                        {
+                            startdatesearch.Text = startDate.ToString("MM/dd/yyyy");
+                        }
+                        else
+                        {
+                            startdatesearch.Text = "Invalid Date";
+                        }
+
+                        DateTime endDate;
+                        if (DateTime.TryParse(dr["empenddate"].ToString(), out endDate))
+                        {
+                            enddatesearch.Text = endDate.ToString("MM/dd/yyyy");
+                        }
+                        else
+                        {
+                            enddatesearch.Text = "Invalid Date";
+                        }
+
+
+                        emrcnamesrch.Text = dr["contactname"].ToString();
+                        emrcnumsrch.Text = dr["contactnum"].ToString();
+                        emrcnumadd.Text = dr["contactadd"].ToString();
+                    }
+
+                    connect.Close();
+                }
             }
-            
+            catch (Exception ex)
+            {
+                // Handle any other exceptions that occur during database operations
+                MessageBox.Show("Error fetching data: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
 
@@ -211,6 +312,100 @@ namespace ERS
         }
 
         private void button1_Click_1(object sender, EventArgs e)
+        {
+            try
+            {
+                printPreviewDialog1.Document = printDocument1;
+                printPreviewDialog1.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error displaying print preview: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void searchbtn_Click(object sender, EventArgs e)
+        {
+            fetchdata();
+        }
+
+        private void cnumsearch_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+
+        private void ClearControls(Control control)
+        {
+            foreach (Control c in control.Controls)
+            {
+                if (c is TextBox && c.Name != "idtb")
+                {
+                    ((TextBox)c).Clear(); // Clear textboxes
+                }
+                else if (c is PictureBox)
+                {
+                    ((PictureBox)c).Image = null;
+                }
+                else if (c.HasChildren)
+                {
+                    ClearControls(c); // Recursively clear controls if they have child controls
+                }
+            }
+        }
+
+        private void button3_Click_1(object sender, EventArgs e)
+        {
+            ClearControls(this);
+        }
+
+        private void lnamesearch_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void TextBoxSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            // Check if the pressed key is Enter (key code 13)
+            if (e.KeyCode == Keys.Enter)
+            {
+                // Call the method to fetch data when Enter is pressed
+                fetchdata();
+            }
+        }
+
+        private void printDocument1_PrintPage(object sender, System.Drawing.Printing.PrintPageEventArgs e)
+        {
+              string logoPath = @"C:\Users\kmo\source\repos\ERS\ERS\Assets\PSAHeader.png";
+
+              // Load the logo image from the specified path
+              Image logo = Image.FromFile(logoPath);
+
+              // Draw the logo at a specific location on the page
+              e.Graphics.DrawImage(logo, new PointF(50, 50));
+            
+            try
+            {
+                e.Graphics.DrawString("CERTIFICATE OF SERVICES RENDERED", new Font("Arial", 20), Brushes.Black, new Point(150,200));
+                float textWidth = e.Graphics.MeasureString("CERTIFICATE OF SERVICES RENDERED", new Font("Arial", 20)).Width;
+
+                // Draw a line underneath the text
+                e.Graphics.DrawLine(Pens.Black, 150, 220 + e.Graphics.MeasureString("CERTIFICATE OF SERVICES RENDERED", new Font("Arial", 20)).Height, 150 + textWidth, 220 + e.Graphics.MeasureString("CERTIFICATE OF SERVICES RENDERED", new Font("Arial", 20)).Height);
+
+                // Extract the first letter from the middle name and add a period
+                string middleInitial = mnamesearch.Text.Length > 0 ? mnamesearch.Text[0] + "." : "";
+
+                e.Graphics.DrawString("This is to certify that " +fnamesearch.Text + " " + middleInitial + " " + lnamesearch1.Text, new Font("Arial", 20), Brushes.Black, new Point(100, 320));
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error drawing print page: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+        }
+
+        private void printPreviewDialog1_Load(object sender, EventArgs e)
         {
 
         }

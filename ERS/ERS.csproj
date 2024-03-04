@@ -118,11 +118,12 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Assets\" />
     <Folder Include="Directory\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\PSAHeader.png" />
     <Content Include="logouticon.png" />
+    <Content Include="PSAHeader.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

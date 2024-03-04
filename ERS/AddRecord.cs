@@ -117,19 +117,29 @@ namespace ERS
         }
 
 
-        private async void button1_Click(object sender, EventArgs e)
+        private void button1_Click(object sender, EventArgs e)
         {
+            try
+            {
             if (string.IsNullOrEmpty(idtb.Text) || string.IsNullOrEmpty(fnametb.Text))
                 {
                     MessageBox.Show("Please fill all blank fields", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                try
+                if (string.IsNullOrWhiteSpace(profpic.ImageLocation))
                 {
+                    MessageBox.Show("Please select an image.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
 
-                await Task.Run(() =>
+                if (!File.Exists(profpic.ImageLocation))
                 {
+                    MessageBox.Show("Image file does not exist at the specified location.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+
                     using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
                     {
                         connect.Open();
@@ -137,28 +147,17 @@ namespace ERS
                         string directoryPath = Path.Combine(@"C:\Users\kmo\source\repos\ERS\ERS\Directory\", idtb.Text.Trim());
                         string imagePath = Path.Combine(directoryPath, "image.jpg");
 
+
                         if (!Directory.Exists(directoryPath))
                         {
                             Directory.CreateDirectory(directoryPath);
                         }
 
-                        if (!string.IsNullOrEmpty(profpic.ImageLocation))
-                        {
-                            //Copy the image file to the destination path
-                            File.Copy(profpic.ImageLocation, imagePath, true);
+                        File.Copy(profpic.ImageLocation, imagePath, true);
 
-                            //Dispose of the Image object to release the file
-                            profpic.Image.Dispose();
-                        }
-                        else
-                        {
-                            MessageBox.Show("Image location is null or empty", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-                        }
-
-                        string bday = bdaydp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                        string startDate = startdatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                        string endDate = enddatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        string bday = bdaydp.Value.ToString("MM-dd-yyyy", CultureInfo.InvariantCulture);
+                        string startDate = startdatedp.Value.ToString("MM-dd-yyyy", CultureInfo.InvariantCulture);
+                        string endDate = enddatedp.Value.ToString("MM-dd-yyyy", CultureInfo.InvariantCulture);
 
                         string project = projcb.SelectedItem?.ToString() ?? "";
                         string position = emppos.SelectedItem?.ToString() ?? "";
@@ -189,7 +188,6 @@ namespace ERS
                             cmd.ExecuteNonQuery();
                         }
                     }
-                });
 
                         MessageBox.Show("Record Successfully Added", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
                        // connect.Close();
@@ -204,11 +202,11 @@ namespace ERS
 
 
 
-            private async void button4_Click(object sender, EventArgs e)
+            private void button4_Click(object sender, EventArgs e)
         {
             ClearControls(this);
 
-            string generatedID = await Task.Run (() => GenerateEmployeeID());
+            string generatedID = GenerateEmployeeID();
             idtb.Text = generatedID;
         }
 
@@ -286,7 +284,8 @@ namespace ERS
         }
 
 
-        private async void importbtn_Click(object sender, EventArgs e)
+
+        private void importbtn_Click(object sender, EventArgs e)
         {
             try
             {
@@ -298,9 +297,8 @@ namespace ERS
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
                     string imagePath = dialog.FileName;
-                   // imagePath = dialog.FileName;
-                   // profpic.ImageLocation = imagePath;
-                    await LoadImageAsync(imagePath);
+                    LoadImage(imagePath);
+                    profpic.ImageLocation = imagePath; // Set the ImageLocation property
                 }
             } 
             catch(Exception ex) 
@@ -319,26 +317,21 @@ namespace ERS
 
         }
 
-
-        private async Task LoadImageAsync(string imagePath)
+        private void LoadImage(string imagePath)
         {
             try
             {
-                // Load the image asynchronously
-                using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    profpic.Image = await Task.Run(() => System.Drawing.Image.FromStream(fs));
-                }
+                profpic.Image = System.Drawing.Image.FromFile(imagePath);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading image: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 // Log the exception
-                Console.WriteLine($"Error in LoadImageAsync: {ex}");
+                Console.WriteLine($"Error in LoadImage: {ex}");
             }
         }
 
-        private async void dataGridView1_CellContentClick_1(object sender, DataGridViewCellEventArgs e)
+        private void dataGridView1_CellContentClick_1(object sender, DataGridViewCellEventArgs e)
         {
             /*
             int columnIndex = e.ColumnIndex;
@@ -376,29 +369,9 @@ namespace ERS
                     // Clear the picture box before loading a new image
                     profpic.Image?.Dispose();
 
-                    int maxAttempts = 3;
-                    int delayMilliseconds = 500; // 0.5 seconds
 
-                    for (int attempt = 1; attempt <= maxAttempts; attempt++)
-                    {
-                        try
-                        {
-                            await LoadImageAsync(imagePath);
-                            // profpic.Image = System.Drawing.Image.FromFile(imagePath);
-                            break;
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Error loading image (attempt {attempt}): {ex.Message}");
+                    LoadImage(imagePath);
 
-                            if (attempt == maxAttempts)
-                            {
-                                MessageBox.Show($"Error loading image: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            }
-
-                            Thread.Sleep(delayMilliseconds);
-                        }
-                    }
                 }
             }
             catch (Exception ex)
@@ -410,38 +383,23 @@ namespace ERS
         }
 
 
-            // Load the image from the file path in the DataGridView
-
-            /*
-            if (selectedRow.Cells["image"].Value != DBNull.Value)
-            {
-                string imagePath = selectedRow.Cells["image"].Value.ToString();
-                try
-                {
-                    // Load the image into the PictureBox control
-                    profpic.Image = System.Drawing.Image.FromFile(imagePath);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Error loading image: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-            */
-  
-
-        private async void updaterecordbtn_Click(object sender, EventArgs e)
+        private void updaterecordbtn_Click(object sender, EventArgs e)
         {
 
             if (fnametb.Text == "")
             {
                 MessageBox.Show("Missing Information", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;            
             }
-            else
+
+            if (profpic.Image == null || string.IsNullOrEmpty(profpic.ImageLocation))
             {
+                MessageBox.Show("Please select an image", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }          
+
                 try
                 {
-                    await Task.Run(() =>
-                    {
                         using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
                         {
                             connect.Open();
@@ -456,6 +414,8 @@ namespace ERS
 
                             if (!string.IsNullOrEmpty(profpic.ImageLocation))
                             {
+                                string imageExtension = Path.GetExtension(profpic.ImageLocation); // Get the extension from the original image
+                                imagePath = Path.ChangeExtension(imagePath, imageExtension); // Update imagePath with correct extension
                                 File.Copy(profpic.ImageLocation, imagePath, true);
                             }
                             else
@@ -464,32 +424,46 @@ namespace ERS
                                 return;
                             }
 
-                            string bday = bdaydp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                            string startDate = startdatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                            string endDate = enddatedp.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                            string bday = bdaydp.Value.ToString("MM-dd-yyyy", CultureInfo.InvariantCulture);
+                            string startDate = startdatedp.Value.ToString("MM-dd-yyyy", CultureInfo.InvariantCulture);
+                            string endDate = enddatedp.Value.ToString("MM-dd-yyyy", CultureInfo.InvariantCulture);
 
                             string project = projcb.SelectedItem != null ? projcb.SelectedItem.ToString() : "";
                             string position = emppos.SelectedItem != null ? emppos.SelectedItem.ToString() : "";
 
-                            string query = "UPDATE empdata " + "SET empfirstname = @FirstName, " +
-                           "empmiddlename = @MiddleName, " +
-                           "emplastname = @LastName, " +
-                           "empcnum = @ContactNumber, " +
-                           "empaddress = @Address, " +
-                           "empbirthdate = @Birthday, " +
-                           "empproject = @Project, " +
-                           "emppostn = @Position, " +
-                           "empstartdate = @StartDate, " +
-                           "empenddate = @EndDate, " +
-                           "image = @ImagePath, " +
-                           "contactname = @EmpContactName, " +
-                           "contactnum = @EmpContactNumber, " +
-                           "contactadd = @EmpContactAddress " +
-                           "WHERE emp_id = '" + idtb.Text + "'; ";
+                    string query = "UPDATE empdata " + "SET empfirstname = @FirstName, " +
+                   "empmiddlename = @MiddleName, " +
+                   "emplastname = @LastName, " +
+                   "empcnum = @ContactNumber, " +
+                   "empaddress = @Address, " +
+                   "empbirthdate = @Birthday, " +
+                   "empproject = @Project, " +
+                   "emppostn = @Position, " +
+                   "empstartdate = @StartDate, " +
+                   "empenddate = @EndDate";
+
+                    if (!string.IsNullOrEmpty(profpic.ImageLocation))
+                    {
+                        query += ", image = @ImagePath";
+                    }
+
+                    query += ", contactname = @EmpContactName, " +
+                              "contactnum = @EmpContactNumber, " +
+                              "contactadd = @EmpContactAddress " +
+                              "WHERE emp_id = '" + idtb.Text + "';";
 
 
 
-                            using (SqlCommand cmd = new SqlCommand(query, connect))
+                    /*
+                     "image = @ImagePath, " +
+                     "contactname = @EmpContactName, " +
+                     "contactnum = @EmpContactNumber, " +
+                     "contactadd = @EmpContactAddress " +
+                     "WHERE emp_id = '" + idtb.Text + "'; ";
+                    */
+
+
+                    using (SqlCommand cmd = new SqlCommand(query, connect))
                             {
                                 // cmd.Parameters.AddWithValue("@Id", idtb.Text.Trim());
                                 cmd.Parameters.AddWithValue("@FirstName", fnametb.Text.Trim());
@@ -507,10 +481,15 @@ namespace ERS
                                 cmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
                                 cmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
 
-                                cmd.ExecuteNonQuery();
+                        if (!string.IsNullOrEmpty(profpic.ImageLocation))
+                        {
+                            cmd.Parameters.AddWithValue("@ImagePath", imagePath);
+                        }
+
+                        cmd.ExecuteNonQuery();
                             }
                         }
-                    });
+                 
                     MessageBox.Show("Record Updated Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                     populate();
@@ -522,7 +501,6 @@ namespace ERS
                 }
              }
             
-        }
 
         private void bdaydp_ValueChanged(object sender, EventArgs e)
         {
