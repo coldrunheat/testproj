@@ -27,59 +27,78 @@ namespace ERS
         {
             InitializeComponent();
 
+            idyrbtn.Click += idyrbtn_Click;
+
             dataGridView1.CellClick += dataGridView1_CellContentClick_1;
 
             if (isNewRecord)
             {
-                string generatedID = GenerateEmployeeID();
-                idtb.Text = generatedID;
+               // string generatedID = GenerateEmployeeID();
+               // idtb.Text = generatedID;
+
+                for (int year = 2020; year <= DateTime.Now.Year; year++)
+                {
+                    yearcb.Items.Add(year);
+                }
+
+                int oldestYear = 2020;
+                yearcb.SelectedItem = oldestYear;
             }
         }
 
 
         private string GenerateEmployeeID()
         {
-            string year = DateTime.Now.Year.ToString();
             string idNumber = "";
 
-            try
+            if (yearcb.SelectedItem != null)
             {
-                using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
+                string year = yearcb.SelectedItem.ToString();
+
+                try
                 {
-                    connect.Open();
-                    string query = $"SELECT emp_id FROM empdata WHERE emp_id LIKE '{year}-%' ORDER BY emp_id";
-                    SqlCommand cmd = new SqlCommand(query, connect);
-                    SqlDataReader reader = cmd.ExecuteReader();
-
-                    int expectedIDNumber = 1;
-                    while (reader.Read())
+                    using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
                     {
-                        string currentID = reader["emp_id"].ToString();
-                        int currentIndex = int.Parse(currentID.Split('-')[1]);
+                        connect.Open();
+                        string query = $"SELECT emp_id FROM empdata WHERE emp_id LIKE '{year}-%' ORDER BY emp_id DESC";
+                        SqlCommand cmd = new SqlCommand(query, connect);
+                        SqlDataReader reader = cmd.ExecuteReader();
 
-                        // If the current index does not match the expected index, a gap is found
-                        if (currentIndex != expectedIDNumber)
+                        int expectedIDNumber = 1;
+                        while (reader.Read())
                         {
-                            idNumber = $"{year}-{expectedIDNumber.ToString("0000")}";
-                            break;
+                            string currentID = reader["emp_id"].ToString();
+                            int currentIndex = int.Parse(currentID.Split('-')[1]);
+
+                            // If the current index does not match the expected index, a gap is found
+                            if (currentIndex != expectedIDNumber)
+                            {
+                                idNumber = $"{year}-{expectedIDNumber.ToString("0000")}";
+                                break;
+                            }
+
+                            // If no gaps are found, increment the expected index
+                            expectedIDNumber++;
                         }
 
-                        // If no gaps are found, increment the expected index
-                        expectedIDNumber++;
-                    }
+                        // If all existing IDs are sequential, generate the next ID in sequence
+                        if (string.IsNullOrEmpty(idNumber))
+                        {
+                            idNumber = $"{year}-{expectedIDNumber.ToString("0000")}";
+                        }
 
-                    // If all existing IDs are sequential, generate the next ID in sequence
-                    if (string.IsNullOrEmpty(idNumber))
-                    {
-                        idNumber = $"{year}-{expectedIDNumber.ToString("0000")}";
+                        reader.Close();
                     }
-
-                    reader.Close();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error generating Employee ID: " + ex.Message, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-            catch (Exception ex)
+            else
             {
-                MessageBox.Show("Error generating Employee ID: " + ex.Message, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // Handle the case where no item is selected in yearcb
+                MessageBox.Show("Please select a year.", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             return idNumber;
         }
@@ -88,6 +107,36 @@ namespace ERS
         private void AddRecord_Load(object sender, EventArgs e)
         {
             populate();
+
+            InitializeProjectCb();
+        }
+
+        private void InitializeProjectCb()
+        {
+            // Load existing projects from the database and add them to the combobox
+            try
+            {
+                projcb.Items.Clear(); 
+                using (SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\kmo\Documents\lgndb.mdf;Integrated Security=True;Connect Timeout=30;"))
+                {
+                    connect.Open();
+                    string query = "SELECT DISTINCT empproject FROM empdata"; 
+                    SqlCommand cmd = new SqlCommand(query, connect);
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        string project = reader["empproject"].ToString();
+                        projcb.Items.Add(project); // Add project to combobox items
+                    }
+
+                    reader.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading projects: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -162,9 +211,12 @@ namespace ERS
                     string position = emppos.SelectedItem?.ToString() ?? "";
 
 
-
                     string empDataQuery = "INSERT INTO empdata (emp_id, empfirstname, empmiddlename, emplastname, empcnum, empaddress,empbirthdate, empproject, emppostn, empstartdate, empenddate, contactname, contactnum, contactadd) " +
                     "VALUES (@Id, @FirstName, @MiddleName, @LastName, @ContactNumber, @Address, @Birthday, @Project, @Position, @StartDate, @EndDate, @EmpContactName, @EmpContactNumber, @EmpContactAddress)";
+
+
+
+
 
                     using (SqlCommand empDatacmd = new SqlCommand(empDataQuery, connect))
                     {
@@ -196,7 +248,6 @@ namespace ERS
                         empImagesCmd.ExecuteNonQuery();
                     }
 
-
                     MessageBox.Show("Record Successfully Added", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     // connect.Close();
                     populate();
@@ -212,6 +263,9 @@ namespace ERS
             private void button4_Click(object sender, EventArgs e)
         {
             ClearControls(this);
+
+            int oldestYear = 2020;
+            yearcb.SelectedItem = oldestYear;
 
             string generatedID = GenerateEmployeeID();
             idtb.Text = generatedID;
@@ -442,60 +496,75 @@ namespace ERS
                         string project = projcb.SelectedItem != null ? projcb.SelectedItem.ToString() : "";
                         string position = emppos.SelectedItem != null ? emppos.SelectedItem.ToString() : "";
 
-                        string updateDataQuery = "UPDATE empdata " + "SET empfirstname = @FirstName, " +
-                       "empmiddlename = @MiddleName, " +
-                       "emplastname = @LastName, " +
-                       "empcnum = @ContactNumber, " +
-                       "empaddress = @Address, " +
-                       "empbirthdate = @Birthday, " +
-                       "empproject = @Project, " +
-                       "emppostn = @Position, " +
-                       "empstartdate = @StartDate, " +
-                       "empenddate = @EndDate, " +
-                       "image = @ImagePath," +
-                       "contactname = @EmpContactName, " +
-                       "contactnum = @EmpContactNumber, " +
-                       "contactadd = @EmpContactAddress " +
-                       "WHERE emp_id = '" + idtb.Text + "';";
-
-
-
-                        using (SqlCommand updateDataCmd = new SqlCommand(updateDataQuery, connect))
-                        {
-                            // cmd.Parameters.AddWithValue("@Id", idtb.Text.Trim());
-                            updateDataCmd.Parameters.AddWithValue("@FirstName", fnametb.Text.Trim());
-                            updateDataCmd.Parameters.AddWithValue("@MiddleName", mnametb.Text.Trim());
-                            updateDataCmd.Parameters.AddWithValue("@LastName", lnametb.Text.Trim());
-                            updateDataCmd.Parameters.AddWithValue("@ContactNumber", cnumtb.Text.Trim());
-                            updateDataCmd.Parameters.AddWithValue("@Address", addresstb.Text.Trim());
-                            updateDataCmd.Parameters.AddWithValue("@Birthday", bday);
-                            updateDataCmd.Parameters.AddWithValue("@Project", project);
-                            updateDataCmd.Parameters.AddWithValue("@Position", position);
-                            updateDataCmd.Parameters.AddWithValue("@StartDate", startDate);
-                            updateDataCmd.Parameters.AddWithValue("@EndDate", endDate);
-                            updateDataCmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
-                            updateDataCmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
-                            updateDataCmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
-
-
-                            updateDataCmd.ExecuteNonQuery();
-
-                        }
-                        
                         string updateImagesQuery = "UPDATE emp_images SET image_path = @ImagePath WHERE emp_id = @EmpId";
                         using (SqlCommand updateImagesCmd = new SqlCommand(updateImagesQuery, connect))
+                            {
+                                updateImagesCmd.Parameters.AddWithValue("@EmpId", idtb.Text.Trim());
+                                updateImagesCmd.Parameters.AddWithValue("@ImagePath", imagePath);
+                        try 
                         {
-                            updateImagesCmd.Parameters.AddWithValue("@EmpId", idtb.Text.Trim());
-                            updateImagesCmd.Parameters.AddWithValue("@ImagePath", imagePath);
-
                             updateImagesCmd.ExecuteNonQuery();
                         }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("Error updating emp_images table: " + ex.Message, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
+
+                    }
+
+
+                    string updateDataQuery = "UPDATE empdata " + "SET empfirstname = @FirstName, " +
+                  "empmiddlename = @MiddleName, " +
+                  "emplastname = @LastName, " +
+                  "empcnum = @ContactNumber, " +
+                  "empaddress = @Address, " +
+                  "empbirthdate = @Birthday, " +
+                  "empproject = @Project, " +
+                  "emppostn = @Position, " +
+                  "empstartdate = @StartDate, " +
+                  "empenddate = @EndDate, " +
+                  "contactname = @EmpContactName, " +
+                  "contactnum = @EmpContactNumber, " +
+                  "contactadd = @EmpContactAddress " +
+                  "WHERE emp_id = '" + idtb.Text + "';";
+
+
+
+                    using (SqlCommand updateDataCmd = new SqlCommand(updateDataQuery, connect))
+                    {
+                        // cmd.Parameters.AddWithValue("@Id", idtb.Text.Trim());
+                        updateDataCmd.Parameters.AddWithValue("@FirstName", fnametb.Text.Trim());
+                        updateDataCmd.Parameters.AddWithValue("@MiddleName", mnametb.Text.Trim());
+                        updateDataCmd.Parameters.AddWithValue("@LastName", lnametb.Text.Trim());
+                        updateDataCmd.Parameters.AddWithValue("@ContactNumber", cnumtb.Text.Trim());
+                        updateDataCmd.Parameters.AddWithValue("@Address", addresstb.Text.Trim());
+                        updateDataCmd.Parameters.AddWithValue("@Birthday", bday);
+                        updateDataCmd.Parameters.AddWithValue("@Project", project);
+                        updateDataCmd.Parameters.AddWithValue("@Position", position);
+                        updateDataCmd.Parameters.AddWithValue("@StartDate", startDate);
+                        updateDataCmd.Parameters.AddWithValue("@EndDate", endDate);
+                        updateDataCmd.Parameters.AddWithValue("@EmpContactName", empcontactname.Text.Trim());
+                        updateDataCmd.Parameters.AddWithValue("@EmpContactNumber", empcontactnum.Text.Trim());
+                        updateDataCmd.Parameters.AddWithValue("@EmpContactAddress", empcontactaddress.Text.Trim());
+
+                        try
+                        {
+                            updateDataCmd.ExecuteNonQuery();
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("Error updating empdata table: " + ex.Message, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
+                    }
+                  }
+                        
 
                     MessageBox.Show("Record Updated Successfully", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                     populate();
                 }
-              }
 
                 catch (Exception ex)
                 {
@@ -512,6 +581,55 @@ namespace ERS
         private void empcontactnum_TextChanged(object sender, EventArgs e)
         {
 
+        }
+
+        private void label14_Click_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void addprojbtn_Click(object sender, EventArgs e)
+        {
+            // Add the new project to the combobox
+            string newProject = addprojtb.Text.Trim();
+            if (!string.IsNullOrEmpty(newProject))
+            {
+                if (!projcb.Items.Contains(newProject)) // Check if the project already exists
+                {
+                    projcb.Items.Add(newProject); // Add the new project to the combobox items
+                    addprojtb.Clear();
+                    MessageBox.Show("New project added successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show("Project already exists.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Please enter a project name.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void label15_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void comboBox1_SelectedIndexChanged_2(object sender, EventArgs e)
+        {
+
+        }
+
+        private void idyrbtn_Click(object sender, EventArgs e)
+        {
+            string generatedID = GenerateEmployeeID();
+            idtb.Text = generatedID;
         }
     }
 }

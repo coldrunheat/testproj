@@ -400,10 +400,10 @@ namespace ERS
             try
             {
                 e.Graphics.DrawString("CERTIFICATE OF SERVICES RENDERED", new Font("Arial", 20), Brushes.Black, new Point(150,200));
-                float textWidth = e.Graphics.MeasureString("CERTIFICATE OF SERVICES RENDERED", new Font("Arial", 20)).Width;
+                float textWidth1 = e.Graphics.MeasureString("CERTIFICATE OF SERVICES RENDERED", new Font("Arial", 20)).Width;
 
                 // Draw a line underneath the text
-                e.Graphics.DrawLine(Pens.Black, 150, 220 + e.Graphics.MeasureString("CERTIFICATE OF SERVICES RENDERED", new Font("Arial", 20)).Height, 150 + textWidth, 220 + e.Graphics.MeasureString("CERTIFICATE OF SERVICES RENDERED", new Font("Arial", 20)).Height);
+                e.Graphics.DrawLine(Pens.Black, 150, 220 + e.Graphics.MeasureString("CERTIFICATE OF SERVICES RENDERED", new Font("Arial", 20)).Height, 150 + textWidth1, 220 + e.Graphics.MeasureString("CERTIFICATE OF SERVICES RENDERED", new Font("Arial", 20)).Height);
 
                 // Extract the first letter from the middle name and add a period
                 string middleInitial = mnamesearch.Text.Length > 0 ? mnamesearch.Text[0] + "." : "";
@@ -416,11 +416,11 @@ namespace ERS
                 // Define table dimensions
                 int numRows = 3;
                 int numCols = 3;
-                float cellWidth = 150;
-                float cellHeight = 30;
+                float cellWidth = 200;
+                float cellHeight = 40;
 
                 // Define starting position of the table
-                float startX = 200;
+                float startX = 120;
                 float startY = 380;
 
                 // Draw table outline
@@ -435,9 +435,28 @@ namespace ERS
                 }
 
                 // Draw cell contents
+                string[] projectLines = projectsearch.Text.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+
+                // Combine the lines into a single string with a line break
+                string projectText = string.Join("\n", projectLines);
+
+                // Create a new font with appropriate size for wrapping text
+                Font font = new Font("Arial", 12);
+
+                // Calculate text area width and height
+                float textWidth = cellWidth - 10; // subtract padding
+                float textHeight = cellHeight - 10; // subtract padding
+
+                // Draw wrapped text
+                SizeF textSize = e.Graphics.MeasureString(projectText, font, (int)textWidth);
+                float x = startX + 5; // Add left padding
+                float y = startY + 25; // Add top padding
+                e.Graphics.DrawString(projectText, font, Brushes.Black, new RectangleF(x, y, textWidth, textHeight));
+
+
                 string[,] contents = {
         { "ACTIVITY", "POSITION", "PERIOD COVERED"  },
-        { " + projectsearch.Text + ", "Row 2, Col 2", "Row 2, Col 3" },
+        { "" , "Row 2, Col 2", "Row 2, Col 3" },
         { "Row 3, Col 1", "Row 3, Col 2", "Row 3, Col 3" }
     };
 
@@ -446,8 +465,8 @@ namespace ERS
                     for (int col = 0; col < numCols; col++)
                     {
                         string text = contents[row, col];
-                        float x = startX + col * cellWidth + 5; // Add padding
-                        float y = startY + row * cellHeight + 5; // Add padding
+                        x = startX + col * cellWidth + 5; // Add padding
+                        y = startY + row * cellHeight + 5; // Add padding
                         e.Graphics.DrawString(text, new Font("Arial", 12), Brushes.Black, x, y);
                     }
                 }
